@@ -1,26 +1,10 @@
-/**
- * Text Component Styles
- * One class per entry in the type scale defined in styles/tokens.css.
- *
- * Each variant pulls all four of its properties from tokens — size,
- * line height, weight, and letter-spacing. Tracking is part of the
- * scale rather than an afterthought: large text set at default
- * tracking reads loose and small UI text reads cramped, so display and
- * title sizes tighten while captions open up slightly.
- */
-
 .text {
-	/* Mount fade-in — shared `stella-appear` keyframes in tokens.css. */
 	animation: var(--stella-appear-animation);
 
 	font-family: var(--stella-font-ui);
 	margin: 0;
 }
 
-/* `text-wrap: balance` on the two largest sizes only — it evens out
-   line lengths so a heading never leaves one orphaned word on its last
-   line. Deliberately not applied to body copy: the algorithm is capped
-   at a handful of lines and is meant for short display text. */
 .display {
 	font-size: var(--stella-text-display);
 	line-height: var(--stella-text-display-lh);
@@ -79,9 +63,6 @@
 	letter-spacing: var(--stella-text-caption-strong-ls);
 }
 
-/* Tabular figures — digits share one advance width, so a value that
-   updates in place (a counter, a timestamp, a file size) doesn't make
-   the text around it shift. */
 .mono {
 	font-family: var(--stella-font-mono);
 	font-size: var(--stella-text-mono);
@@ -91,29 +72,21 @@
 	font-variant-numeric: tabular-nums;
 }
 
-/* ============================================================================
-   COLOR
-   ============================================================================ */
-
 .color-primary {
-	color: var(--stella-text-primary);
+	color: var(--stella-text-0);
 }
 
 .color-secondary {
-	color: var(--stella-text-secondary);
+	color: var(--stella-text-1);
 }
 
 .color-tertiary {
-	color: var(--stella-text-tertiary);
+	color: var(--stella-text-2);
 }
 
 .color-disabled {
-	color: var(--stella-text-disabled);
+	color: var(--stella-text-3);
 }
-
-/* ============================================================================
-   TRUNCATE
-   ============================================================================ */
 
 .truncate {
 	overflow: hidden;

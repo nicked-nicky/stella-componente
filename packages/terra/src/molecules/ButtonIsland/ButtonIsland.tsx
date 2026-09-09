@@ -5,94 +5,76 @@ import React, {
   isValidElement,
 } from 'react';
 import { Island } from '../../atoms/Island';
-import type { IslandProps } from '../../atoms/Island';
 import { FlexContainer } from '../../layout/FlexContainer';
 import type { FlexContainerProps } from '../../layout/FlexContainer';
 import { Button } from '../../atoms/Button';
-import type { ButtonSize } from '../../atoms/Button';
-import { Divider } from '../../atoms/Divider';
-import type { DividerProps } from '../../atoms/Divider';
+import type { ButtonProps, ButtonSize } from '../../atoms/Button';
 import styles from './ButtonIsland.module.css';
+import type { Grade } from '../../types/types';
+import { resolveSurfaceGrade } from '../../internal/grade';
+import { cx } from '../../utils/cx';
+import { flattenFragments } from '../../utils/flattenFragments';
 
-// ============================================================================
-// TYPES
-// ============================================================================
+type ButtonIslandOrientation = 'horizontal' | 'vertical';
 
-interface ButtonIslandProps
-  extends
-    Omit<FlexContainerProps, 'direction' | 'ref'>,
-    Pick<IslandProps, 'tone' | 'clip'> {
-  /**
-   * Sizing token applied to every `Button` child. A Button that already
-   * has its own explicit `size` prop keeps it — this only sets the
-   * default, it doesn't force an override.
-   * @default 'md'
-   */
-  size?: ButtonSize;
+// A Button is often wrapped in a single-child decorator like Tooltip before
+// it reaches ButtonIsland. Peek through those wrappers (the same "one
+// ReactElement child" shape Tooltip itself expects) to find the Button that
+// actually needs the island's size/grade, rather than silently skipping it.
+function findButton(
+  node: React.ReactNode
+): React.ReactElement<ButtonProps> | undefined {
+  if (!isValidElement(node)) return undefined;
+  if (node.type === Button) return node as React.ReactElement<ButtonProps>;
+  const { children } = node.props as { children?: React.ReactNode };
+  return isValidElement(children) ? findButton(children) : undefined;
 }
 
-// ============================================================================
-// COMPONENT
-// ============================================================================
+function withButtonProps(
+  node: React.ReactNode,
+  apply: (
+    button: React.ReactElement<ButtonProps>
+  ) => React.ReactElement<ButtonProps>
+): React.ReactNode {
+  if (!isValidElement(node)) return node;
+  if (node.type === Button) {
+    return apply(node as React.ReactElement<ButtonProps>);
+  }
+  const { children } = node.props as { children?: React.ReactNode };
+  if (!isValidElement(children)) return node;
+  return cloneElement(
+    node as React.ReactElement<{ children?: React.ReactNode }>,
+    {
+      children: withButtonProps(children, apply),
+    }
+  );
+}
 
-/**
- * ButtonIsland - a row of related actions rendered as one pill-shaped
- * toolbar cluster. The only correct way to use `Button`: it carries no
- * radius or surface of its own, so it's always meant to live inside an
- * Island — even standalone. Composes `Island` (shape="pill") for chrome
- * and `FlexContainer` for layout, with a `size` cascade so you set it
- * once instead of on every `Button`.
- *
- * Buttons sit flush, zero gap; the hairline between adjacent ones is a
- * real `Divider`, auto-inserted for you (an explicit
- * `ButtonIsland.Separator` you place yourself is left alone, for a
- * deliberate sub-cluster break instead of the automatic per-pair one).
- * Only `Button` children get the size cascade. Children stretch to the
- * island's full interior height; a lone `Button` child also grows along
- * the main axis. See WIKI.md's Architecture reference for the full
- * border/separator reasoning.
- *
- * @example
- * ```tsx
- * // The hairline between Cancel and Save is automatic — no Separator needed
- * <ButtonIsland size="sm">
- *   <Button>Cancel</Button>
- *   <Button>Save</Button>
- * </ButtonIsland>
- *
- * // ButtonIsland.Separator for a deliberate sub-cluster break
- * <ButtonIsland size="sm">
- *   <Button iconOnly aria-label="Bold">B</Button>
- *   <Button iconOnly aria-label="Italic">I</Button>
- *   <ButtonIsland.Separator />
- *   <Button iconOnly aria-label="Settings">⚙</Button>
- * </ButtonIsland>
- *
- * // Single button — fills whatever width/height the Island is given.
- * // `shape="pill"` is inline-flex, so the Island is content-sized until
- * // something widens it; a lone Button can only fill space that exists.
- * // Pick whichever of these matches the surrounding layout:
- * <ButtonIsland style={{ width: '100%' }}>          // anywhere
- *   <Button>New note</Button>
- * </ButtonIsland>
- *
- * <ButtonIsland style={{ flex: 1 }}>                // inside a row flex parent
- *   <Button>New note</Button>
- * </ButtonIsland>
- *
- * <ButtonIsland style={{ alignSelf: 'stretch' }}>   // inside a COLUMN flex parent
- *   <Button>New note</Button>                       // (in a row parent this
- * </ButtonIsland>                                   //  stretches height, not width)
- * ```
- */
-const ButtonIslandBase = forwardRef<HTMLElement, ButtonIslandProps>(
+interface ButtonIslandProps extends Omit<
+  FlexContainerProps,
+  'direction' | 'ref'
+> {
+  grade?: Grade;
+
+  parentGrade?: Grade;
+
+  size?: ButtonSize;
+
+  orientation?: ButtonIslandOrientation;
+
+  floating?: boolean;
+}
+
+const ButtonIsland = forwardRef<HTMLElement, ButtonIslandProps>(
   (
     {
       size = 'md',
       gap = '0',
       align,
-      tone = 'header',
-      clip = true,
+      grade: gradeProp,
+      parentGrade,
+      orientation = 'horizontal',
+      floating = false,
       children,
       style,
       className,
@@ -100,123 +82,69 @@ const ButtonIslandBase = forwardRef<HTMLElement, ButtonIslandProps>(
     },
     ref
   ) => {
-    const childArray = Children.toArray(children);
+    const grade = resolveSurfaceGrade(gradeProp, parentGrade, 'default');
+    const vertical = orientation === 'vertical';
+
+    const childArray = Children.toArray(flattenFragments(children));
     const onlyChild = childArray.length === 1 ? childArray[0] : undefined;
+    const onlyChildButton = onlyChild ? findButton(onlyChild) : undefined;
+    // stretchButton is only for a lone *text* button filling the pill —
+    // an icon-only button must stay square, and flex-basis:0 from
+    // stretchButton would win over the aspect-ratio trick below and
+    // squash it, so icon-only buttons are excluded regardless of count.
     const isSingleButton =
-      isValidElement(onlyChild) && onlyChild.type === Button;
+      !vertical &&
+      onlyChildButton !== undefined &&
+      !onlyChildButton.props.iconOnly;
 
-    // Built up by hand rather than `Children.map` — inserting the
-    // auto-hairline `Divider` between Button pairs means the output
-    // array is longer than the input, which `Children.map` (a 1:1
-    // transform) can't express.
-    const sizedChildren: React.ReactNode[] = [];
-    childArray.forEach((child, index) => {
-      if (isValidElement(child) && child.type === Button) {
-        const childProps = child.props as {
-          size?: ButtonSize;
-          className?: string;
-        };
-        // Built up rather than spread as one literal: `className` is only
-        // ever set (never set-to-undefined) — exactOptionalPropertyTypes
-        // rejects an explicit `undefined` for an optional-but-not-nullable
-        // prop, and omitting the key entirely is also just correct here —
-        // multi-button children shouldn't have their className touched.
-        const overrides: { size: ButtonSize; className?: string } = {
-          size: childProps.size ?? size,
-        };
-        if (isSingleButton) {
-          overrides.className = [styles.stretchButton, childProps.className]
-            .filter(Boolean)
-            .join(' ');
-        }
-        sizedChildren.push(
-          cloneElement(
-            child as React.ReactElement<{
-              size?: ButtonSize;
-              className?: string;
-            }>,
-            overrides
-          )
-        );
-
-        // Auto-hairline: a real Divider between this Button and the
-        // next, only when the next sibling is also a bare Button — an
-        // explicit ButtonIsland.Separator the caller already placed
-        // here shouldn't get a second one stacked next to it.
-        const next = childArray[index + 1];
-        if (isValidElement(next) && next.type === Button) {
-          sizedChildren.push(
-            <Divider
-              key={`${child.key ?? index}-hairline`}
-              orientation="vertical"
-            />
-          );
-        }
-      } else {
-        sizedChildren.push(child);
-      }
-    });
+    const preparedChildren = childArray.map((child) =>
+      withButtonProps(child, (button) => {
+        const childProps = button.props;
+        return cloneElement(button, {
+          size: size,
+          grade: grade,
+          className: cx(
+            isSingleButton && styles.stretchButton,
+            vertical && childProps.iconOnly && styles.verticalIconOnly,
+            childProps.className
+          ),
+          style:
+            childProps.iconOnly && !vertical
+              ? { width: 'auto', aspectRatio: '1', ...childProps.style }
+              : childProps.style,
+        });
+      })
+    );
 
     return (
       <Island
         ref={ref}
-        shape="pill"
-        tone={tone}
-        clip={clip}
-        // Internal hook only, not the consumer's `className` (that goes
-        // on the inner FlexContainer/`.group` — see above): lets
-        // ButtonIsland.module.css react this specific Island's border to
-        // a hovered/pressed Button child via `:has()`, scoped to
-        // ButtonIsland instead of leaking onto every Island in the kit.
-        className={styles.root}
-        // `alignItems: stretch` overrides Island's own `center` so the
-        // inner button row fills the island's interior height instead of
-        // being centered at its content height. Without it the buttons'
-        // own `align-items: stretch` has nothing taller to stretch into,
-        // and an island given an explicit height (WindowChrome pinning
-        // its regions to --stella-bar-height) leaves dead space above
-        // and below its buttons. Spread last so a caller's own `style`
-        // still wins.
+        shape={vertical ? 'panel' : 'pill'}
+        grade={grade}
+        floating={floating}
+        className={cx(
+          styles.root,
+          styles[`size-${size}`],
+          vertical && styles.vertical,
+          className
+        )}
         style={{ alignItems: 'stretch', ...style }}
       >
         <FlexContainer
-          direction="row"
+          direction={vertical ? 'column' : 'row'}
           gap={gap}
           align={align ?? 'stretch'}
-          className={[styles.group, className].filter(Boolean).join(' ')}
+          className={styles.group}
           {...flexProps}
         >
-          {sizedChildren}
+          {preparedChildren}
         </FlexContainer>
       </Island>
     );
   }
 );
 
-ButtonIslandBase.displayName = 'ButtonIsland';
-
-// ============================================================================
-// SEPARATOR — sugar for splitting a ButtonIsland into sub-clusters.
-// ============================================================================
-
-/**
- * ButtonIsland.Separator - a `Divider` pinned to `orientation="vertical"`,
- * discoverable as a static on `ButtonIsland` for Ray IDE's
- * `.menu-button-group`-style toolbar breaks. Not a separate atom — same
- * move `Menu.Separator` makes with `Divider` pinned to `horizontal`
- * instead, so both statics stay visually in sync automatically rather
- * than by two implementations happening to agree.
- */
-function ButtonIslandSeparator(props: Omit<DividerProps, 'orientation'>) {
-  return <Divider orientation="vertical" {...props} />;
-}
-
-type ButtonIslandComponent = typeof ButtonIslandBase & {
-  Separator: typeof ButtonIslandSeparator;
-};
-
-const ButtonIsland = ButtonIslandBase as ButtonIslandComponent;
-ButtonIsland.Separator = ButtonIslandSeparator;
+ButtonIsland.displayName = 'ButtonIsland';
 
 export { ButtonIsland };
-export type { ButtonIslandProps };
+export type { ButtonIslandProps, ButtonIslandOrientation };

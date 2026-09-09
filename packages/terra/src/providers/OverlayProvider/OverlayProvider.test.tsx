@@ -5,15 +5,6 @@ import userEvent from '@testing-library/user-event';
 import { OverlayProvider, useOverlayContext } from './OverlayProvider';
 import { useOverlayLayer } from './useOverlayLayer';
 
-// OverlayProvider is the highest-leverage thing in the kit to get right:
-// Dialog, Menu and Popover all route their Escape handling and stacking
-// through it, so a regression here breaks three components at once and
-// does it silently — the overlay still opens, it just stops closing, or
-// closes too much. The nested-Escape case in particular ("a Popover
-// opened inside a Dialog must not close the Dialog underneath") is the
-// exact behaviour the provider exists to provide.
-
-/** Minimal overlay consumer — reports its own topmost status to the DOM. */
 function TestLayer({
   label,
   open,
@@ -144,8 +135,6 @@ describe('OverlayProvider — Escape scoping', () => {
   });
 
   it('Escape closes ONLY the topmost layer, not the ones beneath it', async () => {
-    // The reason this provider exists: a Popover opened from inside a
-    // Dialog must not take the Dialog down with it.
     const user = userEvent.setup();
     const closeOuter = vi.fn();
     const closeInner = vi.fn();
@@ -195,11 +184,11 @@ describe('OverlayProvider — Escape scoping', () => {
       )
     );
 
-    await user.keyboard('{Escape}'); // closes inner
+    await user.keyboard('{Escape}');
     await waitFor(() => expect(screen.queryByTestId('inner')).toBeNull());
     expect(closeOuter).not.toHaveBeenCalled();
 
-    await user.keyboard('{Escape}'); // now reaches outer
+    await user.keyboard('{Escape}');
     expect(closeOuter).toHaveBeenCalledTimes(1);
   });
 
@@ -255,7 +244,6 @@ describe('useOverlayContext — guard', () => {
       useOverlayContext();
       return null;
     }
-    // React logs the error boundary trace; silence it for this one case.
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(() => render(<Orphan />)).toThrow(
       /must be used within an <OverlayProvider>/

@@ -3,20 +3,6 @@ import { Button } from './Button';
 import { ButtonIsland } from '../../molecules/ButtonIsland';
 import { checkA11y } from '../../../playwright/a11y';
 
-// Button's entire visual identity is a three-rung state-layer ladder —
-// hover → press → selected — over a surface it inherits from the
-// wrapping Island. Every rung is a CSS custom property, and the bug
-// class this file exists to catch is two of them silently resolving to
-// the same value: the ladder collapses, the button stops responding
-// visibly, and no jsdom test can see it because jsdom never resolves a
-// cascade. This is the same failure that ButtonIsland.ct.tsx was written
-// for, one level down.
-//
-// Also covers the focus ring, which the changelog records as having been
-// entirely absent (`outline: 0`) at one point despite the component's
-// own docblock promising it.
-
-/** Resolves a design token to its computed value on the document root. */
 async function token(page: import('@playwright/test').Page, name: string) {
   return page.evaluate(
     (n) =>
@@ -25,75 +11,50 @@ async function token(page: import('@playwright/test').Page, name: string) {
   );
 }
 
-/**
- * Waits out the kit's longest interaction transition.
- *
- * Only for assertions that a value has *not* changed. Those can't use
- * `expect.poll` — it would pass on the first tick, before any transition
- * has had a chance to run, which is exactly the stale read that makes
- * the assertion vacuous. Comfortably longer than --stella-motion-fast.
- */
 async function settle(page: import('@playwright/test').Page) {
   await page.waitForTimeout(250);
 }
 
-test.describe('state-layer ladder', () => {
-  test('press steps firmer than hover, and selected deliberately matches hover', async ({
+test.describe('grade ladder', () => {
+  test('press steps firmer than hover, and selected is its own fixed fill', async ({
     mount,
     page,
   }) => {
-    // Asserted at the token level as well as the rendered level: if these
-    // drift, this failure names the cause directly instead of just
-    // reporting that a hover looked the same as a press.
-    //
-    // `selected === hover` is a deliberate visual-identity choice, not an
-    // oversight — a selected button is distinguished by being lit *at
-    // rest* (persistence is the signal), and hovering the current item
-    // lands it back on the tone it already had. Pinned as an equality so
-    // it reads as intended rather than as the collision it resembles.
     await mount(
       <ButtonIsland>
         <Button>Save</Button>
       </ButtonIsland>
     );
 
-    const hover = await token(page, '--stella-state-hover');
-    const active = await token(page, '--stella-state-active');
-    const selected = await token(page, '--stella-state-selected');
+    const hover = await token(page, '--stella-surface-3');
+    const active = await token(page, '--stella-surface-4');
+    const selected = await token(page, '--stella-selected');
 
     expect(hover).not.toBe('');
     expect(active).not.toBe(hover);
-    expect(selected).toBe(hover);
+    expect(selected).not.toBe('');
   });
 
   test('the fill ladder and the hairline ladder stay distinct', async ({
     mount,
     page,
   }) => {
-    // The regression that actually cost something: --stella-state-hover
-    // once equalled --stella-border-default, so every border-colour
-    // escalation reading it (ButtonIsland's separator, the Island's outer
-    // border via :has()) painted the colour it was already painted. The
-    // two ladders are separate tokens now precisely so they can't
-    // silently converge again.
     await mount(
       <ButtonIsland>
         <Button>Save</Button>
       </ButtonIsland>
     );
 
-    const borderDefault = await token(page, '--stella-border-default');
-    const borderHover = await token(page, '--stella-border-hover');
-    const borderActive = await token(page, '--stella-border-active');
+    const surfaceResting = await token(page, '--stella-surface-3');
+    const borderHover = await token(page, '--stella-border-4');
+    const borderActive = await token(page, '--stella-border-5');
 
     expect(borderHover).not.toBe('');
-    expect(borderHover).not.toBe(borderDefault);
+    expect(borderHover).not.toBe(surfaceResting);
     expect(borderActive).not.toBe(borderHover);
   });
 
   test('rest state carries no surface of its own', async ({ mount }) => {
-    // Button borrows the Island's tone — a fill here would mean it had
-    // stopped doing that.
     const component = await mount(
       <ButtonIsland>
         <Button>Save</Button>
@@ -119,10 +80,6 @@ test.describe('state-layer ladder', () => {
     const restColor = await button.evaluate((el) => getComputedStyle(el).color);
     await button.hover();
 
-    // Polled: background-color and color are both transitioned over
-    // --stella-motion-fast, so a single read here samples the
-    // interpolation rather than the destination. See ButtonIsland.ct.tsx
-    // for the run where that difference flipped two tests red.
     await expect
       .poll(() => button.evaluate((el) => getComputedStyle(el).backgroundColor))
       .not.toBe('rgba(0, 0, 0, 0)');
@@ -145,9 +102,6 @@ test.describe('state-layer ladder', () => {
     const read = () =>
       button.evaluate((el) => getComputedStyle(el).backgroundColor);
 
-    // Let hover finish landing before capturing the value the press is
-    // compared against — otherwise the baseline is itself a half-finished
-    // interpolation, and the comparison means nothing in either direction.
     await button.hover();
     await expect.poll(read).not.toBe('rgba(0, 0, 0, 0)');
     const hoverBackground = await read();
@@ -161,9 +115,6 @@ test.describe('state-layer ladder', () => {
     mount,
     page,
   }) => {
-    // The CSS repeats .active across :hover/:active precisely to win the
-    // specificity fight — easy to lose in a refactor, invisible without
-    // a real cascade.
     const component = await mount(
       <ButtonIsland>
         <Button active>Editor</Button>
@@ -175,10 +126,6 @@ test.describe('state-layer ladder', () => {
       (el) => getComputedStyle(el).backgroundColor
     );
     await button.hover();
-    // A "must not change" assertion has to outlast the transition window,
-    // or it passes on a stale sample and would stay green even if the
-    // specificity fight had been lost. Polling is no help here — it would
-    // succeed on the first tick for the same reason.
     await settle(page);
     const hoverBackground = await button.evaluate(
       (el) => getComputedStyle(el).backgroundColor
@@ -190,10 +137,6 @@ test.describe('state-layer ladder', () => {
   test('a selected button is lit at rest, where an unselected one is not', async ({
     mount,
   }) => {
-    // This — not colour — is what makes the current item findable in a
-    // cluster. Selected and hover share a fill by design, so the honest
-    // assertion is about the *resting* state: one button carries a fill
-    // with nothing pointing at it, the other carries none.
     const component = await mount(
       <ButtonIsland>
         <Button active>Editor</Button>
@@ -236,41 +179,11 @@ test.describe('state-layer ladder', () => {
   });
 });
 
-test.describe('focus ring', () => {
-  test('draws a visible ring on keyboard focus', async ({ mount, page }) => {
-    // Regression test for the changelog's "Button had no visible focus
-    // ring" — it set outline: 0 and was the only interactive component
-    // in the kit with no keyboard indicator.
-    const component = await mount(
-      <ButtonIsland>
-        <Button>Save</Button>
-      </ButtonIsland>
-    );
-    const button = component.getByRole('button', { name: 'Save' });
-
-    await page.keyboard.press('Tab');
-    await expect(button).toBeFocused();
-
-    const outline = await button.evaluate((el) => {
-      const s = getComputedStyle(el);
-      return {
-        style: s.outlineStyle,
-        width: s.outlineWidth,
-        color: s.outlineColor,
-      };
-    });
-
-    expect(outline.style).not.toBe('none');
-    expect(outline.width).toBe('2px');
-    expect(outline.color).not.toBe('rgba(0, 0, 0, 0)');
-  });
-
-  test('draws the ring inset, so the Island’s clip cannot swallow it', async ({
+test.describe('focus fill', () => {
+  test('keyboard focus inverts the button instead of drawing an outline', async ({
     mount,
     page,
   }) => {
-    // Island sets overflow: hidden; an outset ring would be clipped away
-    // and effectively invisible inside a linked button group.
     const component = await mount(
       <ButtonIsland>
         <Button>Save</Button>
@@ -278,11 +191,28 @@ test.describe('focus ring', () => {
     );
     const button = component.getByRole('button', { name: 'Save' });
 
+    const read = () =>
+      button.evaluate((el) => {
+        const s = getComputedStyle(el);
+        return {
+          background: s.backgroundColor,
+          color: s.color,
+          outlineStyle: s.outlineStyle,
+        };
+      });
+
+    const resting = await read();
     await page.keyboard.press('Tab');
-    const offset = await button.evaluate(
-      (el) => getComputedStyle(el).outlineOffset
-    );
-    expect(offset).toBe('-2px');
+    await expect(button).toBeFocused();
+
+    await expect
+      .poll(async () => (await read()).background)
+      .not.toBe(resting.background);
+
+    const focused = await read();
+    expect(focused.color).not.toBe(resting.color);
+    expect(focused.background).not.toBe(focused.color);
+    expect(focused.outlineStyle).toBe('none');
   });
 });
 
@@ -301,8 +231,6 @@ test.describe('accessibility', () => {
     mount,
     page,
   }) => {
-    // The icon span is aria-hidden, so without an explicit aria-label
-    // this button would be announced as unlabelled — axe catches it.
     await mount(
       <ButtonIsland>
         <Button iconOnly aria-label="Close">

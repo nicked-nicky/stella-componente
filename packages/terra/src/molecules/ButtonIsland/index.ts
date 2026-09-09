@@ -1,1 +1,5 @@
-export { ButtonIsland, type ButtonIslandProps } from './ButtonIsland';
+export {
+  ButtonIsland,
+  type ButtonIslandProps,
+  type ButtonIslandOrientation,
+} from './ButtonIsland';

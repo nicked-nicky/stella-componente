@@ -1,48 +1,78 @@
 import { test, expect } from '@playwright/experimental-ct-react';
+import type { Locator } from '@playwright/test';
 import { ButtonIsland } from './ButtonIsland';
 import { Button } from '../../atoms/Button';
+import { Tooltip } from '../Tooltip';
+import { OverlayProvider } from '../../providers/OverlayProvider';
 
-// Regression test for this session's real bug: --stella-state-hover and
-// --stella-border-default resolved to the identical raw value, so the
-// auto-inserted separator's hover escalation was a no-op — it changed
-// color "to" the color it already rested at. jsdom can't catch this
-// (no real getComputedStyle cascade over :has()); a real browser can.
-//
-// The stretch tests below are here for the same reason: whether a box
-// actually grew is a measured fact about layout, and jsdom reports every
-// element as 0×0.
-//
-// Colour-after-interaction is asserted with `expect.poll`, never with a
-// single read. Every one of these properties is transitioned over
-// --stella-motion-fast, and getComputedStyle during a transition returns
-// the *current* interpolated value — so reading immediately after a
-// hover reliably catches the colour the element is still leaving. That
-// makes a plain read a coin toss on timing: these two tests passed one
-// run and failed the next with no source change between them. Polling
-// asserts what the property settles on, which is the actual contract.
+test.describe('divider borders', () => {
+  test('the seam between two buttons is painted at rest', async ({ mount }) => {
+    const component = await mount(
+      <ButtonIsland>
+        <Button>Left</Button>
+        <Button>Right</Button>
+      </ButtonIsland>
+    );
 
-test('separator between two buttons changes color on hover', async ({
-  mount,
-}) => {
-  const component = await mount(
-    <ButtonIsland>
-      <Button>Left</Button>
-      <Button>Right</Button>
-    </ButtonIsland>
-  );
+    const seam = await component
+      .getByRole('button', { name: 'Left' })
+      .evaluate((el) => getComputedStyle(el).borderRightColor);
 
-  const separator = component.getByRole('separator');
-  const restingColor = await separator.evaluate(
-    (el) => getComputedStyle(el).backgroundColor
-  );
+    expect(seam).not.toBe('rgba(0, 0, 0, 0)');
+  });
 
-  await component.getByRole('button', { name: 'Left' }).hover();
+  test('the seam escalates on hover', async ({ mount }) => {
+    const component = await mount(
+      <ButtonIsland>
+        <Button>Left</Button>
+        <Button>Right</Button>
+      </ButtonIsland>
+    );
 
-  await expect
-    .poll(() =>
-      separator.evaluate((el) => getComputedStyle(el).backgroundColor)
-    )
-    .not.toBe(restingColor);
+    const left = component.getByRole('button', { name: 'Left' });
+    const resting = await left.evaluate(
+      (el) => getComputedStyle(el).borderRightColor
+    );
+
+    await left.hover();
+
+    await expect
+      .poll(() => left.evaluate((el) => getComputedStyle(el).borderRightColor))
+      .not.toBe(resting);
+  });
+
+  test('outer edges stay collapsed, even while pressed', async ({
+    mount,
+    page,
+  }) => {
+    const component = await mount(
+      <ButtonIsland>
+        <Button>Left</Button>
+        <Button>Right</Button>
+      </ButtonIsland>
+    );
+
+    const left = component.getByRole('button', { name: 'Left' });
+    const right = component.getByRole('button', { name: 'Right' });
+    const transparent = 'rgba(0, 0, 0, 0)';
+
+    expect(
+      await left.evaluate((el) => getComputedStyle(el).borderLeftColor)
+    ).toBe(transparent);
+    expect(
+      await right.evaluate((el) => getComputedStyle(el).borderRightColor)
+    ).toBe(transparent);
+
+    await left.hover();
+    await page.mouse.down();
+    try {
+      await expect
+        .poll(() => left.evaluate((el) => getComputedStyle(el).borderLeftColor))
+        .toBe(transparent);
+    } finally {
+      await page.mouse.up();
+    }
+  });
 });
 
 test('outer Island border changes color on button hover', async ({ mount }) => {
@@ -53,7 +83,7 @@ test('outer Island border changes color on button hover', async ({ mount }) => {
     </ButtonIsland>
   );
 
-  const island = component; // Island is the mounted root element
+  const island = component;
   const restingColor = await island.evaluate(
     (el) => getComputedStyle(el).borderColor
   );
@@ -65,15 +95,110 @@ test('outer Island border changes color on button hover', async ({ mount }) => {
     .not.toBe(restingColor);
 });
 
+test.describe('size/grade inheritance', () => {
+  test("a direct Button child inherits its island's grade", async ({
+    mount,
+  }) => {
+    const component = await mount(
+      <div>
+        <ButtonIsland grade="elevated">
+          <Button>Elevated child</Button>
+        </ButtonIsland>
+        <ButtonIsland grade="global">
+          <Button>Global child</Button>
+        </ButtonIsland>
+      </div>
+    );
+
+    const hoverBackground = async (button: Locator) => {
+      const read = () =>
+        button.evaluate((el) => getComputedStyle(el).backgroundColor);
+      const resting = await read();
+      await button.hover();
+      await expect.poll(read).not.toBe(resting);
+      return read();
+    };
+
+    const elevatedHover = await hoverBackground(
+      component.getByRole('button', { name: 'Elevated child' })
+    );
+    const globalHover = await hoverBackground(
+      component.getByRole('button', { name: 'Global child' })
+    );
+
+    expect(elevatedHover).not.toBe(globalHover);
+  });
+
+  test("a Button's own explicit grade overrides the island's default", async ({
+    mount,
+  }) => {
+    const component = await mount(
+      <ButtonIsland grade="elevated">
+        <Button>Inherits elevated</Button>
+        <Button grade="global">Explicit global</Button>
+      </ButtonIsland>
+    );
+
+    const inherited = component.getByRole('button', {
+      name: 'Inherits elevated',
+    });
+    const explicit = component.getByRole('button', { name: 'Explicit global' });
+
+    const inheritedResting = await inherited.evaluate(
+      (el) => getComputedStyle(el).backgroundColor
+    );
+    const explicitResting = await explicit.evaluate(
+      (el) => getComputedStyle(el).backgroundColor
+    );
+
+    await inherited.hover();
+    await explicit.hover();
+
+    await expect
+      .poll(() =>
+        inherited.evaluate((el) => getComputedStyle(el).backgroundColor)
+      )
+      .not.toBe(inheritedResting);
+    await expect
+      .poll(() =>
+        explicit.evaluate((el) => getComputedStyle(el).backgroundColor)
+      )
+      .not.toBe(explicitResting);
+
+    const inheritedColor = await inherited.evaluate(
+      (el) => getComputedStyle(el).backgroundColor
+    );
+    const explicitColor = await explicit.evaluate(
+      (el) => getComputedStyle(el).backgroundColor
+    );
+    expect(explicitColor).not.toBe(inheritedColor);
+  });
+
+  test('a Button wrapped in a single-child decorator like Tooltip still inherits the grade', async ({
+    mount,
+  }) => {
+    const component = await mount(
+      <OverlayProvider>
+        <ButtonIsland grade="elevated">
+          <Tooltip label="Wrapped">
+            <Button iconOnly aria-label="Wrapped">
+              W
+            </Button>
+          </Tooltip>
+        </ButtonIsland>
+      </OverlayProvider>
+    );
+
+    await expect(
+      component.getByRole('button', { name: 'Wrapped' })
+    ).toHaveAttribute('data-stella-grade', 'elevated');
+  });
+});
+
 test.describe('single-button stretch', () => {
   test('a lone button fills an Island that has been widened', async ({
     mount,
   }) => {
-    // The chain is three boxes deep — Island, the inner button row, then
-    // the Button — and it only takes one of them declining to grow for
-    // the whole thing to look broken. The row was the one: it sat at
-    // flex-grow: 0, so there was no free space inside it for the
-    // Button's `flex: 1` to claim, however wide the Island got.
     const component = await mount(
       <ButtonIsland style={{ width: 400 }}>
         <Button>New note</Button>
@@ -87,16 +212,12 @@ test.describe('single-button stretch', () => {
 
     expect(islandBox).not.toBeNull();
     expect(buttonBox).not.toBeNull();
-    // Within the Island's own border on each side.
     expect(buttonBox!.width).toBeGreaterThan(islandBox!.width - 8);
   });
 
   test('a lone button in an un-widened Island stays at content width', async ({
     mount,
   }) => {
-    // The other half of the contract, and the reason this isn't just
-    // `width: 100%` on the group: `shape="pill"` is content-sized, so a
-    // solo icon button in a toolbar must not suddenly span the row.
     const component = await mount(
       <ButtonIsland>
         <Button>New note</Button>
@@ -111,8 +232,6 @@ test.describe('single-button stretch', () => {
   test('a multi-button Island still lays its buttons out at content width', async ({
     mount,
   }) => {
-    // Only the single-button case opts into growth; widening a cluster
-    // must not silently start stretching every button in it.
     const component = await mount(
       <ButtonIsland style={{ width: 400 }}>
         <Button>Cancel</Button>

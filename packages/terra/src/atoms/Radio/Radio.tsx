@@ -1,87 +1,44 @@
 import React, { forwardRef } from 'react';
-import { usePulse } from '../../utils/usePulse';
 import styles from './Radio.module.css';
+import type { Grade, SizeSM } from '../../types/types';
+import { resolveGrade } from '../../internal/grade';
+import { cx } from '../../utils/cx';
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
-type RadioSize = 'sm' | 'md';
+type RadioSize = SizeSM;
 
 interface RadioProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
   'type' | 'size'
 > {
-  /**
-   * @default 'md'
-   */
   size?: RadioSize;
-
-  /**
-   * Optional label text rendered next to the dot. For full control over
-   * label markup, omit this and wrap Radio in your own <label>.
-   */
+  grade?: Grade;
   label?: React.ReactNode;
 }
 
-// ============================================================================
-// COMPONENT
-// ============================================================================
-
-/**
- * Radio - built on a native `<input type="radio">`.
- *
- * Radios sharing the same `name` get roving arrow-key navigation and
- * mutual-exclusion for free from the browser — no roving-tabindex JS
- * needed. Group them with a shared `name` and wrap in a `<fieldset>` +
- * `<legend>` for the accessible group label (molecule-level concern,
- * not this atom's).
- *
- * @example
- * ```tsx
- * <fieldset>
- *   <legend>Plan</legend>
- *   <Radio name="plan" value="free" label="Free" defaultChecked />
- *   <Radio name="plan" value="pro" label="Pro" />
- * </fieldset>
- * ```
- */
 export const Radio = forwardRef<HTMLInputElement, RadioProps>(
-  ({ size = 'md', label, className, id, onChange, ...props }, ref) => {
+  (
+    { size = 'md', grade: gradeProp, label, className, id, onChange, ...props },
+    ref
+  ) => {
+    const grade = resolveGrade(gradeProp, 'default');
+
     const autoId = React.useId();
     const inputId = id ?? autoId;
 
-    // Commit pulse — see usePulse's docs. Only triggered from a real
-    // onChange event below, never derived from `checked` itself, so a
-    // Radio that simply *renders* pre-checked (the group's initial
-    // selection) never fires it on mount.
-    const [pulsing, triggerPulse] = usePulse();
-
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      if (event.target.checked) triggerPulse();
-      onChange?.(event);
-    };
-
     const input = (
-      <span className={[styles.wrapper, styles[`size-${size}`]].join(' ')}>
+      <span
+        data-stella-grade={grade}
+        className={[styles.wrapper, styles[`size-${size}`]].join(' ')}
+      >
         <input
           ref={ref}
           type="radio"
           id={inputId}
-          className={[styles.input, className].filter(Boolean).join(' ')}
-          onChange={handleChange}
+          className={cx(styles.input, className)}
+          onChange={onChange}
           {...props}
         />
-        <span
-          className={[styles.dot, pulsing && styles.pulsing]
-            .filter(Boolean)
-            .join(' ')}
-          aria-hidden="true"
-        >
-          {/* Expanding ring played on every check-on, see
-              Radio.module.css's PULSE section. */}
-          <span className={styles.pulseRing} />
-        </span>
+        <span className={styles.dot} aria-hidden="true" />
       </span>
     );
 

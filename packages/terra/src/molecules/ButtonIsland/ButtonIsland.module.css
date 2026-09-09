@@ -1,93 +1,235 @@
-/**
- * ButtonIsland Component Styles
- *
- * Buttons sit flush, zero gap, no border of their own — the hairline
- * between them is a real auto-inserted `Divider`, not a CSS trick. See
- * WIKI.md's Architecture reference (Button/ButtonIsland border model).
- *
- * @format
+.root[data-stella-grade] .group > button:first-child {
+	border-left-color: transparent;
+}
+
+.root[data-stella-grade] .group > button:last-child {
+	border-right-color: transparent;
+}
+
+.root[data-stella-grade] .group > button + button {
+	border-left-color: transparent;
+}
+
+/*
+ * :has() pulls in the specificity of its own argument, so these three rules
+ * end up MORE specific than the vertical-mode border reset below despite
+ * being declared first — without :not(.vertical) they'd win in vertical mode
+ * too and light up the wrong (inline-axis) border on the button above.
  */
-
-/* ============================================================================
-   SEPARATOR ESCALATION — every Divider in the group (auto-inserted or
-   explicit, matched via `[role="separator"]`) brightens with a
-   hovered/pressed Button on either side: `+` for "near side," `:has()`
-   for "far side" (`+` alone only looks forward). See WIKI.md.
-
-   Reads the *border* ladder, not the state layers, and this is the one
-   thing not to "simplify" back. The separator is painted directly
-   against the hovered button's own fill. Point it at
-   --stella-state-hover and it becomes the exact colour that button just
-   filled itself with, so the hairline vanishes into the button — which
-   is also its resting colour, since --stella-state-hover and
-   --stella-border-default are the same value. The border ladder is the
-   same neutral distribution shifted one rung up, which is precisely
-   enough to keep the line on top of the fill. See tokens.css.
-   ============================================================================ */
-
-.group > button:hover:not(:disabled) + [role="separator"],
-.group > [role="separator"]:has(+ button:hover:not(:disabled)) {
-	background-color: var(--stella-border-hover);
+.root[data-stella-grade]:not(.vertical)
+	.group
+	> button:has(+ button:hover:not(:disabled)) {
+	border-right-color: var(--stella-g-border-1);
 }
 
-.group > button:active:not(:disabled) + [role="separator"],
-.group > [role="separator"]:has(+ button:active:not(:disabled)) {
-	background-color: var(--stella-border-active);
+.root[data-stella-grade]:not(.vertical)
+	.group
+	> button:has(+ button:active:not(:disabled)) {
+	border-right-color: var(--stella-g-border-2);
 }
 
-/* ============================================================================
-   BORDER ESCALATION — the outer Island's border reacts to a Button
-   child's hover/press via `:has()` (same pattern as Checkbox's
-   `.label:has(.input:disabled)`) — no JS needed. Reads the border
-   ladder, not the state layers: those are fills tuned to sit over a
-   surface, and while --stella-state-hover happened to equal
-   --stella-border-default this rule escalated the border to the colour
-   it was already painted. See WIKI.md.
-   ============================================================================ */
+.root[data-stella-grade]:not(.vertical)
+	.group
+	> button:has(+ button:focus-visible) {
+	border-right-color: var(--stella-text-0);
+}
 
 .root:has(.group > button:hover:not(:disabled)) {
-	border-color: var(--stella-border-hover);
+	border-color: var(--stella-g-border-1);
 }
 
 .root:has(.group > button:active:not(:disabled)) {
-	border-color: var(--stella-border-active);
+	border-color: var(--stella-g-border-2);
 }
 
-/* The inner button row fills the Island's inline size rather than
-   sitting at its content width.
+.root:has(.group > button:focus-visible) {
+	border-color: var(--stella-text-0);
+}
 
-   This is the middle link in the horizontal chain, and without it the
-   other two do nothing: the Island can be as wide as the caller likes
-   and `.stretchButton` can ask for all the free space it wants, but the
-   row between them was `flex-grow: 0`, so it stayed at content width and
-   there was no free space inside it to distribute. A solo Button in an
-   Island given an explicit width therefore refused to grow, which looked
-   like `.stretchButton` being broken when the row was the problem.
-
-   `min-width: 0` so a long label shrinks inside the pill instead of
-   pushing it wider than the Island. */
 .group {
 	flex-grow: 1;
 	min-width: 0;
 }
 
-/* Single-button mode — see ButtonIslandBase's `isSingleButton` check.
-   Main-axis growth: in the default `direction="row"` that is horizontal,
-   so a lone Button spans whatever inline size the Island has.
+.group > button {
+	height: 100%;
+	min-height: 0;
+}
 
-   Note this only *consumes* space the Island already has. `shape="pill"`
-   is `inline-flex` — sized to its content — so an Island nobody has
-   widened has nothing to give, and the button stays at content width by
-   design. Widening it is the caller's call; see ButtonIsland.tsx's
-   docblock for the three ways to do it.
-
-   Cross-axis fill (every button growing to the island's interior height,
-   Ray's `.menu-button { height: 100% }`) is separate, and handled by the
-   `align="stretch"` default on the inner FlexContainer plus
-   `alignItems: stretch` on the Island itself — see ButtonIsland.tsx.
-   That pair is what keeps a `size="sm"` cluster (WindowControls) and a
-   `size="md"` cluster (systemTools) the same height side by side in a
-   title bar. */
 .stretchButton {
 	flex: 1;
+}
+
+.root.size-xs {
+	height: var(--stella-size-xs);
+}
+
+.root.size-sm {
+	height: var(--stella-size-sm);
+}
+
+.root.size-md {
+	height: var(--stella-size-md);
+}
+
+.root.size-lg {
+	height: var(--stella-size-lg);
+}
+
+/*
+ * Vertical mode — the same segmented control rotated a quarter turn.
+ *
+ * Button draws its seams on the inline axis (border-left / border-right),
+ * because a horizontal group is the common case. Stacking the buttons means
+ * those seams have to move to the block axis, so every inline-axis rule above
+ * gets a block-axis counterpart here and the inline borders are neutralised.
+ * The seam between two buttons is owned by the upper one's bottom border,
+ * mirroring how the left button owns it horizontally.
+ *
+ * Height comes from each button's own size class rather than from the island,
+ * so a vertical group grows with its content instead of being pinned to one row.
+ */
+
+.root.vertical {
+	/* Island's panel shape pins width to 100%; a segmented control should size
+	   to its content and stretch only where a parent asks it to. Height comes
+	   from the buttons, so the fixed row height above is released too.
+	   width:auto alone doesn't achieve "only stretch where asked" — auto is
+	   exactly what a column's default align-items:stretch overrides, so any
+	   vertical island dropped into an ordinary flex column (the common case)
+	   would silently balloon to that column's full width. align-self is the
+	   actual opt-out; a parent can still force it wide with its own
+	   align-self override on this element, which is the "where asked" case. */
+	height: auto;
+	width: auto;
+	align-self: flex-start;
+}
+
+.vertical .group > button {
+	height: auto;
+}
+
+/* The universal rule above zeroes each button's own min-height so it can
+   stretch to fill the island's fixed row height horizontally. Vertical mode
+   releases that stretch (height: auto above) but Button's own CSS carries no
+   vertical padding of its own — it relies entirely on min-height for
+   breathing room — so that floor has to be restored per size here or a
+   stacked button collapses to its bare text/icon line height. */
+.root.vertical.size-xs .group > button {
+	min-height: var(--stella-size-xs);
+}
+
+.root.vertical.size-sm .group > button {
+	min-height: var(--stella-size-sm);
+}
+
+.root.vertical.size-md .group > button {
+	min-height: var(--stella-size-md);
+}
+
+.root.vertical.size-lg .group > button {
+	min-height: var(--stella-size-lg);
+}
+
+.root.vertical[data-stella-grade] .group > button {
+	border-left-color: transparent;
+	border-right-color: transparent;
+	border-top: var(--stella-border-width) solid var(--stella-g-border-0);
+	border-bottom: var(--stella-border-width) solid var(--stella-g-border-0);
+
+	/* Leading icons line up in a column only if the content is start-aligned;
+	   centring each label independently makes the icon rail look ragged. */
+	justify-content: flex-start;
+}
+
+/*
+ * Icon-only buttons are square everywhere else in the app (standalone, or in
+ * a horizontal island via the width:auto/aspect-ratio:1 inline style). The
+ * column's align-items:stretch would otherwise stretch a width:auto button
+ * to the group's full width, so squareness here needs an explicit width tied
+ * to the same per-size token as the min-height fix above, plus align-self to
+ * opt out of the stretch.
+ */
+.root.vertical[data-stella-grade] .group > button.verticalIconOnly {
+	align-self: center;
+	justify-content: center;
+}
+
+.root.vertical.size-xs .group > button.verticalIconOnly {
+	width: var(--stella-size-xs);
+}
+
+.root.vertical.size-sm .group > button.verticalIconOnly {
+	width: var(--stella-size-sm);
+}
+
+.root.vertical.size-md .group > button.verticalIconOnly {
+	width: var(--stella-size-md);
+}
+
+.root.vertical.size-lg .group > button.verticalIconOnly {
+	width: var(--stella-size-lg);
+}
+
+.root.vertical[data-stella-grade] .group > button:first-child {
+	border-top-color: transparent;
+}
+
+.root.vertical[data-stella-grade] .group > button:last-child {
+	border-bottom-color: transparent;
+}
+
+.root.vertical[data-stella-grade] .group > button + button {
+	border-top-color: transparent;
+}
+
+/* A separator (e.g. Menu.Separator) sliced into the stack ends the section on
+   either side of it, same as the island's own top/bottom edge — without this,
+   a plain button+button neighbor check misses it entirely and both buttons'
+   own borders stack directly against the separator's line with no spacing. */
+.root.vertical[data-stella-grade] .group > button:has(+ [role="separator"]) {
+	border-bottom-color: transparent;
+}
+
+.root.vertical[data-stella-grade] .group > [role="separator"] + button {
+	border-top-color: transparent;
+}
+
+/* Hover and active light the button's own bottom seam only; its top seam is
+   owned by the button above it, exactly as the left seam is horizontally. */
+.root.vertical[data-stella-grade] .group > button:hover:not(:disabled) {
+	border-bottom-color: var(--stella-g-border-1);
+}
+
+.root.vertical[data-stella-grade] .group > button:active:not(:disabled) {
+	border-bottom-color: var(--stella-g-border-2);
+}
+
+/* focusFill clears border-color, but the block-axis rule above outranks it. */
+.root.vertical[data-stella-grade] .group > button:focus-visible {
+	border-top-color: transparent;
+	border-bottom-color: transparent;
+}
+
+.root.vertical[data-stella-grade]
+	.group
+	> button:has(+ button:hover:not(:disabled)) {
+	border-bottom-color: var(--stella-g-border-1);
+}
+
+.root.vertical[data-stella-grade]
+	.group
+	> button:has(+ button:active:not(:disabled)) {
+	border-bottom-color: var(--stella-g-border-2);
+}
+
+.root.vertical[data-stella-grade] .group > button:has(+ button:focus-visible) {
+	border-bottom-color: var(--stella-text-0);
+}
+
+/* The island's own border draws the outer edges, so the first and last
+   buttons never paint one of their own — including while interacted with. */
+.root.vertical[data-stella-grade] .group > button:last-child:hover,
+.root.vertical[data-stella-grade] .group > button:last-child:active {
+	border-bottom-color: transparent;
 }

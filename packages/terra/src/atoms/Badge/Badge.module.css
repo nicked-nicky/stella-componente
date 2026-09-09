@@ -1,25 +1,13 @@
-/**
- * Badge Component Styles
- *
- * Every color×variant combination (5 colors × 3 variants = 15) is a
- * `[data-color][data-variant]` attribute rule below — Badge.tsx carries
- * no color logic of its own, just the two attributes. Adding a new
- * status color means adding its `-text`/`-bg`/`-border` alias triplet
- * to tokens.css and one block of 3 rules here — no JS to touch.
- *
- * @format
- */
-
 .badge {
-	/* Mount fade-in — shared `stella-appear` keyframes in tokens.css. */
 	animation: var(--stella-appear-animation);
 
 	display: inline-flex;
 	align-items: center;
 	gap: var(--stella-space-1);
 
-	height: 20px;
+	height: var(--stella-space-5);
 	padding: 0 var(--stella-space-2);
+	box-sizing: border-box;
 
 	font-family: var(--stella-font-ui);
 	font-size: var(--stella-text-caption-strong);
@@ -31,14 +19,6 @@
 	border-radius: var(--stella-radius-panel);
 	border: var(--stella-border-width) solid transparent;
 }
-
-/* ============================================================================
-   NEUTRAL — the default color. `tinted`/`outline` need genuinely
-   different raw-palette steps between light and dark (same reason
-   Button.module.css picks its fill steps with `light-dark()`) rather
-   than an alias triplet, since "neutral" has no status hue of its own
-   to hang `-text`/`-bg`/`-border` tokens off of.
-   ============================================================================ */
 
 .badge[data-color="neutral"][data-variant="filled"] {
 	background-color: var(--stella-neutral-500);
@@ -61,16 +41,6 @@
 		var(--stella-neutral-600)
 	);
 }
-
-/* ============================================================================
-   STATUS COLORS — success/info/warning/error/debug. Each reads its own
-   `-text`/`-bg`/`-border` alias triplet from tokens.css (already
-   theme-correct via `light-dark()`, so no branching needed here).
-   `filled` is the one exception: a fixed, theme-invariant raw-palette
-   `-700` step with `--stella-text-on-fill` text — a "flag" that reads
-   the same regardless of scheme, deliberately bolder than `-bg` (see
-   tokens.css's STATUS section for why they're not the same step).
-   ============================================================================ */
 
 .badge[data-color="success"][data-variant="filled"] {
 	background-color: var(--stella-green-700);

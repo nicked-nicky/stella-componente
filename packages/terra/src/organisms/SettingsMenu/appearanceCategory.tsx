@@ -1,4 +1,3 @@
-import { Icon } from '../../atoms/Icon';
 import { PaletteIcon, SunIcon, MoonIcon, MonitorIcon } from '../../utils/icons';
 import type {
   ColorScheme,
@@ -10,47 +9,10 @@ import type {
 } from '../../theme/ThemeManager';
 import type { SettingsCategory, SettingsFieldValue } from './types';
 
-// ============================================================================
-// PRE-BUILT APPEARANCE CATEGORY
-//
-// SettingsMenu itself is fully generic — it has no idea ThemeManager
-// exists. This file is the one place that bridges the two: a ready-made
-// `SettingsCategory` covering every axis ThemeManager exposes
-// (colorScheme/radius/density/borderWidth/motion), plus the two small
-// adapter functions a consumer needs to wire it to `useTheme()` without
-// hand-rolling the same schema every app built on Terra would otherwise
-// duplicate (this is exactly what terra-test's SettingsModal used to do
-// before this file existed).
-//
-// Fully optional and fully composable — spread `appearanceSettingsCategory`
-// into your own `SettingsSchema.categories` alongside whatever app-specific
-// categories (General, Notifications, ...) you write yourself:
-//
-// ```tsx
-// const schema: SettingsSchema = {
-//   categories: [appearanceSettingsCategory, myGeneralCategory],
-// };
-//
-// const values: SettingsValues = {
-//   appearance: getAppearanceValues(theme.config),
-//   general: myGeneralValues,
-// };
-//
-// function handleChange(categoryId: string, key: string, value: SettingsFieldValue) {
-//   if (categoryId === 'appearance') return applyAppearanceChange(theme, key, value);
-//   // ...your own categories
-// }
-// ```
-// ============================================================================
-
 export const appearanceSettingsCategory: SettingsCategory = {
   id: 'appearance',
   label: 'Appearance',
-  icon: (
-    <Icon>
-      <PaletteIcon />
-    </Icon>
-  ),
+  icon: <PaletteIcon />,
   description:
     'Backed by ThemeManager — these fields change the real theme live, no local state involved.',
   fields: [
@@ -120,10 +82,8 @@ export const appearanceSettingsCategory: SettingsCategory = {
   ],
 };
 
-/** The slice of `ThemeConfig` the Appearance category's fields cover — every axis except the persistence-schema `version`. */
 export type AppearanceSettingsValues = Omit<ThemeConfig, 'version'>;
 
-/** Projects a `ThemeConfig` into the `SettingsValues['appearance']` shape SettingsMenu expects. */
 export function getAppearanceValues(
   config: ThemeConfig
 ): AppearanceSettingsValues {
@@ -131,12 +91,6 @@ export function getAppearanceValues(
   return values;
 }
 
-/**
- * The subset of `ThemeManager`'s (or `useTheme()`'s) setters
- * `applyAppearanceChange` needs. Structural, not a concrete class/context
- * type, so either a raw `ThemeManager` instance or a `useTheme()` result
- * satisfies it without adapting.
- */
 export interface AppearanceThemeControls {
   setColorScheme: (colorScheme: ColorScheme) => void;
   setRadius: (radius: RadiusStyle) => void;
@@ -145,13 +99,6 @@ export interface AppearanceThemeControls {
   setMotion: (motion: MotionStyle) => void;
 }
 
-/**
- * Routes one `appearanceSettingsCategory` field change to the matching
- * ThemeManager setter. Call this from your `SettingsMenu`'s `onChange`
- * once you've confirmed `categoryId === 'appearance'` — unknown keys are
- * a silent no-op rather than a throw, since a future field added here
- * shouldn't crash an app pinned to an older Terra version reading it.
- */
 export function applyAppearanceChange(
   theme: AppearanceThemeControls,
   key: string,

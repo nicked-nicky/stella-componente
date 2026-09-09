@@ -1,1 +1,5 @@
-export { NotificationProvider, useNotifications } from './NotificationProvider';
+export {
+  NotificationProvider,
+  useNotifications,
+  useOptionalNotifications,
+} from './NotificationProvider';

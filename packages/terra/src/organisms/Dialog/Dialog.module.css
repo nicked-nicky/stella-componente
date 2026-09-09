@@ -1,16 +1,3 @@
-/**
- * ============================================================================
- *    Dialog — GTK4/libadwaita-style modal dialogue.
- *    See Dialog.tsx for the component-level docblock. This sheet owns only
- *    the visual layer: backdrop dim, panel surface + size scale, and the
- *    enter/exit choreography. All color, spacing and radius come from
- *    design tokens, so the panel follows the theme (and density/radius
- *    scales) automatically.
- *    ============================================================================
- *
- * @format
- */
-
 .backdrop {
 	position: fixed;
 	inset: 0;
@@ -19,17 +6,9 @@
 	justify-content: center;
 	padding: var(--stella-space-4);
 	background-color: var(--stella-scrim);
-	/* Shared `stella-appear` keyframe, tokens.css — see
-	   --stella-backdrop-in-animation for why this isn't its own keyframe. */
 	animation: var(--stella-backdrop-in-animation);
 }
 
-/* Exit — Dialog.tsx keeps the backdrop/panel mounted for
-   EXIT_DURATION_MS (matches --stella-motion-fast) after `open` goes
-   false so this gets a chance to actually play before unmount.
-   Compound `.backdrop.closing` selector (not standalone `.closing`)
-   guarantees this wins over `.backdrop`'s own `animation` regardless
-   of stylesheet order, same pattern as Button's `.button.active`. */
 .backdrop.closing {
 	animation: backdrop-out var(--stella-motion-fast) var(--stella-easing-in) both;
 }
@@ -38,25 +17,20 @@
 	display: flex;
 	flex-direction: column;
 	width: 100%;
-	max-height: calc(100dvh - var(--stella-space-6));
 	max-height: calc(100vh - var(--stella-space-6));
-	background-color: var(--stella-surface-overlay);
-	border: var(--stella-border-width) solid var(--stella-border-default);
+	border-style: solid;
+	border-width: var(--stella-border-width);
 	border-radius: var(--stella-radius-panel);
-	/* Rim highlight + drop shadow — the modal tier, one step above
-	   Island's `overlay` tone. See ELEVATION in tokens.css. */
 	box-shadow: var(--stella-rim), var(--stella-shadow-xl);
 	overflow: hidden;
 	outline: none;
 	animation: panel-in var(--stella-motion-slow) var(--stella-easing-spring) both;
 	box-sizing: border-box;
+
+	background-color: var(--stella-g-surface-0);
+	border-color: var(--stella-g-border-1);
 }
 
-/* Exit — accelerate, no spring: an overshoot reads fine arriving but
-   looks like a stutter on the way out, and something leaving should
-   get out of the way rather than glide to a stop (the decelerating
-   --stella-easing-out is for arrivals). Compound selector for the same
-   override-guarantee reason as .backdrop.closing above. */
 .panel.closing {
 	animation: panel-out var(--stella-motion-fast) var(--stella-easing-in) both;
 }
@@ -78,10 +52,10 @@
 	align-items: center;
 	justify-content: space-between;
 	gap: var(--stella-space-3);
-	padding: var(--stella-space-2) var(--stella-space-2) var(--stella-space-2)
-		var(--stella-space-4);
-	border-bottom: var(--stella-border-width) solid var(--stella-border-subtle);
+	padding: var(--stella-space-2) var(--stella-space-3);
+	border-bottom: var(--stella-border-width) solid var(--stella-g-border-1);
 	flex-shrink: 0;
+	background-color: var(--stella-g-surface-1);
 }
 
 .headerTitle {
@@ -101,8 +75,9 @@
 	justify-content: flex-end;
 	gap: var(--stella-space-2);
 	padding: var(--stella-space-3) var(--stella-space-4);
-	border-top: var(--stella-border-width) solid var(--stella-border-subtle);
+	border-top: var(--stella-border-width) solid var(--stella-g-border-1);
 	flex-shrink: 0;
+	background-color: var(--stella-g-surface-1);
 }
 
 @keyframes panel-in {

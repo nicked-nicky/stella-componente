@@ -1,77 +1,30 @@
-/**
- * Island Component Styles
- *
- * The structural container every surface in Stella-Componente builds on. Two
- * shapes, both reading the same `--stella-radius-panel` (shape is a
- * layout distinction, not a rounding one):
- * - `panel` — block-level, fills its container. Sidebars, modals, cards.
- * - `pill`  — sized to its content. Toolbar/button-group clusters.
- *
- * See WIKI.md's Architecture reference for more.
- */
-
 .island {
-	/* Mount fade-in — shared `stella-appear` keyframes in tokens.css. */
 	animation: var(--stella-appear-animation);
 
 	box-sizing: border-box;
-	align-items: center;
-	background-color: var(--stella-surface-card);
-	border: var(--stella-border-width) solid var(--stella-border-default);
-	color: var(--stella-text-primary);
+	color: var(--stella-text-0);
 
-	/* Border-only transition — Island has no hover/press state of its
-	   own, but ButtonIsland reacts its outer border to a hovered/pressed
-	   Button child (see ButtonIsland.module.css's `:has()` rules), and
-	   that color swap should ease like every other state change in the
-	   kit rather than snap. */
-	transition: border-color var(--stella-motion-fast) var(--stella-easing-out);
-}
-
-.clip {
+	border: var(--stella-border-width) solid var(--stella-g-border-0);
+	border-radius: var(--stella-radius-panel);
+	background-color: var(--stella-g-surface-0);
 	overflow: hidden;
-}
 
-/* ============================================================================
-   SHAPE
-   ============================================================================ */
+	transition:
+		background-color var(--stella-motion-fast) var(--stella-easing-out),
+		border-color var(--stella-motion-fast) var(--stella-easing-out);
+}
 
 .shape-panel {
+	width: 100%;
 	display: flex;
-	border-radius: var(--stella-radius-panel);
+	align-items: stretch;
 }
 
 .shape-pill {
 	display: inline-flex;
-	border-radius: var(--stella-radius-panel);
+	align-items: center;
 }
 
-/* ============================================================================
-   TONE — which surface alias this Island reads its background from
-   ============================================================================ */
-
-.tone-card {
-	background-color: var(--stella-surface-card);
-}
-
-.tone-sidebar {
-	background-color: var(--stella-surface-sidebar);
-}
-
-.tone-header {
-	background-color: var(--stella-surface-header);
-}
-
-.tone-muted {
-	background-color: var(--stella-surface-muted);
-}
-
-/* The floating tier. Two shadow layers, not one: the drop shadow puts
-   it above the page, and --stella-rim adds libadwaita's hairline top
-   highlight — the cue that a surface is catching light from above,
-   which is what makes a floating panel read as a physical object
-   rather than a flat rectangle. See ELEVATION in tokens.css. */
-.tone-overlay {
-	background-color: var(--stella-surface-overlay);
+.floating {
 	box-shadow: var(--stella-rim), var(--stella-shadow-lg);
 }

@@ -1,170 +1,23 @@
-/**
- * SettingsMenu Component Styles
- *
- * Nav sidebar only — field rows lean entirely on Text/Divider/Input/
- * Switch/Radio/Button/ButtonIsland's own styles, no CSS needed here for
- * those. The nav
- * itself deliberately isn't built from the Button atom: category items
- * are flat, individually-pill-shaped buttons with no wrapping Island —
- * closer to color-cart's SettingsNavItem than a ButtonIsland toolbar.
- * Active is just "hover, but sticky" (a persistent --stella-state-selected
- * layer + full-strength text), not a solid accent fill — keeps the list
- * quiet next to the louder Button variants used elsewhere.
- *
- * @format
- */
-
-/* ============================================================================
-   LAYOUT — a fixed-height panel with two independently scrolling columns.
-
-   The height is deliberately not content-driven: a settings panel that
-   grows and shrinks as you move between categories makes the whole
-   window jump, and the nav column's scroll position resets with it.
-   Pinning it means switching category only ever scrolls the right-hand
-   pane.
-
-   `80vh` is the default rather than `80%` because a percentage silently
-   resolves to `auto` unless every ancestor has a definite height — which
-   is exactly the collapsed-to-content-height case this is meant to
-   prevent. Override with --stella-settings-height where the parent does
-   size itself (inside a Dialog, say: `--stella-settings-height: 100%`).
-
-   `min-height: 0` on the flex parent and both children is what actually
-   lets them scroll: a flex item's default `min-height: auto` refuses to
-   shrink below its content, so `overflow-y: auto` on a child of a
-   too-short flex container never engages.
-   ============================================================================ */
-
 .root {
 	height: var(--stella-settings-height, 80vh);
 	min-height: 0;
 }
 
-.nav,
-.panel {
-	overflow-y: auto;
-	min-height: 0;
-	/* Reserves the gutter up front, so a category whose fields happen to
-	   overflow doesn't reflow the column it appears in. */
-	scrollbar-gutter: stable;
-}
-
+/*
+ * The rail is now just a gutter: the vertical ButtonIsland inside it owns the
+ * surface, the border and every interaction state, so the category buttons
+ * behave exactly like any other segmented group in the kit.
+ */
 .nav {
-	width: 220px;
+	width: var(--stella-settings-nav-width);
 	flex-shrink: 0;
-	padding: var(--stella-space-3);
-	border-right: var(--stella-border-width) solid var(--stella-border-default);
+	padding: var(--stella-space-2);
 }
 
-.panel {
-	flex: 1;
-	min-width: 0;
-	padding: var(--stella-space-6);
+.fieldRow {
+	padding: var(--stella-space-4) 0;
 }
 
-/* Quiet scrollbars — the thumb only materialises once the pointer is in
-   the column (or something inside it has keyboard focus), so a settings
-   panel at rest shows no scroll furniture at all. The track stays
-   transparent either way; this only overrides the thumb colour from the
-   global rule in tokens.css, so width/radius/inset stay consistent with
-   every other scrollable surface in the kit.
-
-   Deliberately not `scrollbar-width: none` — hiding the scrollbar
-   outright would take the affordance away from pointer users who need
-   to drag it, and remove the only indication that there's more content. */
-.nav,
-.panel {
-	scrollbar-color: transparent transparent;
-	transition: scrollbar-color var(--stella-motion-fast) var(--stella-easing-out);
-}
-
-.nav:hover,
-.nav:focus-within,
-.panel:hover,
-.panel:focus-within {
-	scrollbar-color: var(--stella-border-default) transparent;
-}
-
-.nav::-webkit-scrollbar-thumb,
-.panel::-webkit-scrollbar-thumb {
-	background: transparent;
-	background-clip: padding-box;
-}
-
-.nav:hover::-webkit-scrollbar-thumb,
-.nav:focus-within::-webkit-scrollbar-thumb,
-.panel:hover::-webkit-scrollbar-thumb,
-.panel:focus-within::-webkit-scrollbar-thumb {
-	background: var(--stella-border-default);
-	background-clip: padding-box;
-}
-
-.navItem {
-	/* Mount fade-in — shared `stella-appear` keyframes in tokens.css. */
-	animation: var(--stella-appear-animation);
-
-	display: flex;
-	align-items: center;
-	gap: var(--stella-space-2);
-	width: 100%;
-
-	padding: var(--stella-space-2) var(--stella-space-3);
-	border: none;
-	border-radius: var(--stella-radius-panel);
-	background-color: transparent;
-	color: var(--stella-text-tertiary);
-
-	font-family: var(--stella-font-ui);
-	font-size: var(--stella-text-body);
-	text-align: left;
-	cursor: pointer;
-	user-select: none;
-	-webkit-user-select: none;
-
-	transition:
-		background-color var(--stella-motion-fast) var(--stella-easing-out),
-		color var(--stella-motion-fast) var(--stella-easing-out);
-}
-
-.navItem:hover {
-	background-color: var(--stella-state-hover);
-	color: var(--stella-text-secondary);
-}
-
-/* Press feedback — the icon inside squeezes on click; the row chrome
-   stays put (no whole-row scale). */
-.navItem:active .navIcon {
-	transform: scale(0.85);
-}
-
-.navItem:focus-visible {
-	outline: 2px solid var(--stella-focus-ring);
-	outline-offset: 2px;
-}
-
-/* The quiet selection signal — a translucent state layer, deliberately
-   softer than the solid --stella-border-default fill Button/Menu.Item
-   use for `active`. A nav list wants "this row is current", not the
-   louder "this control is pinned on". */
-.navItemActive,
-.navItemActive:hover {
-	background-color: var(--stella-state-selected);
-	color: var(--stella-text-primary);
-}
-
-/* Row rules between fields, one shade quieter than a default Divider —
-   color-cart's `divide-border/60`. These separate rows inside a single
-   category, not sections from each other, so they should read as the
-   faintest thing on the panel. */
 .rowDivider {
-	background-color: var(--stella-border-subtle);
-}
-
-.navIcon {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	flex-shrink: 0;
-	/* Springy press squeeze (see the :active rule above) */
-	transition: transform var(--stella-motion-fast) var(--stella-easing-spring);
+	background-color: var(--stella-g-border-1);
 }

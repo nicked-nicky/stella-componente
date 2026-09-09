@@ -1,36 +1,19 @@
-/**
- * Notification Component Styles
- *
- * Compact pill toast (ported from color-cart's `Toast`/`ToastStack`) —
- * content-hugging rounded-full chrome rather than a wide left-accented
- * card. Status is carried by the icon color alone (the same status
- * alias tokens Badge/Input already use — no new colors introduced;
- * these 5 hues are the only place color appears anywhere in Stella-Componente),
- * not by a colored border, matching color-cart's neutral-bordered pill
- * with a tinted icon.
- */
-
 .notification {
 	display: inline-flex;
 	align-items: center;
 	gap: var(--stella-space-2);
 
-	max-width: 360px;
+	max-width: var(--stella-overlay-width-xl);
 	padding: var(--stella-space-2) var(--stella-space-2) var(--stella-space-2)
 		var(--stella-space-4);
 
-	background-color: var(--stella-surface-overlay);
-	border: var(--stella-border-width) solid var(--stella-border-default);
+	background-color: var(--stella-surface-1);
+	border: var(--stella-border-width) solid var(--stella-border-1);
 	border-radius: var(--stella-radius-panel);
 	box-shadow: var(--stella-rim), var(--stella-shadow-lg);
 
 	font-family: var(--stella-font-ui);
 
-	/* Slide-up + fade entrance — same idea as color-cart's Toast (animejs
-	 * translateY + opacity, ~220ms outQuad) reimplemented as a plain CSS
-	 * keyframe so Terra takes on zero animation dependency, but flipped
-	 * to rise from below since the stack now anchors to the bottom
-	 * center instead of the top right. */
 	animation: stella-notification-enter var(--stella-motion-base)
 		var(--stella-easing-expo) both;
 }
@@ -47,16 +30,6 @@
 	}
 }
 
-/* Exit — NotificationProvider keeps a dismissed toast mounted for
- * EXIT_DURATION_MS (matches --stella-motion-fast) so this has time to
- * actually play before it's removed from the `items` array. Sinks back
- * down the way it rose in, mirrored. Compound `.notification.closing`
- * selector (not standalone `.closing`) guarantees this wins over
- * `.notification`'s own `animation` regardless of stylesheet order,
- * same pattern as Button's `.button.active`. `pointer-events: none`
- * stops a hover during the fade from re-pausing a toast that's already
- * on its way out.
- */
 .notification.closing {
 	animation: stella-notification-exit var(--stella-motion-fast)
 		var(--stella-easing-in) both;
@@ -103,23 +76,16 @@
 .message {
 	font-size: var(--stella-text-caption);
 	line-height: var(--stella-text-caption-lh);
-	color: var(--stella-text-primary);
+	color: var(--stella-text-0);
 }
 
 .dismiss {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	flex-shrink: 0;
-	width: 20px;
-	height: 20px;
-	padding: 0;
+	composes: dismiss from "../../styles/shared/dismissButton.module.css";
 
-	background: transparent;
-	border: none;
-	border-radius: var(--stella-radius-panel);
-	color: var(--stella-text-secondary);
-	cursor: pointer;
+	width: var(--stella-icon-size-md);
+	height: var(--stella-icon-size-md);
+
+	color: var(--stella-text-1);
 
 	transition: background-color var(--stella-motion-fast)
 		var(--stella-easing-out);
@@ -128,25 +94,21 @@
 .dismiss svg {
 	width: 12px;
 	height: 12px;
-	/* Springy press squeeze (see the :active rule below) */
 	transition: transform var(--stella-motion-fast) var(--stella-easing-spring);
 }
 
+/* !important: Button's own hover/active states flip color to
+   --stella-text-0; this dismiss button stays at --stella-text-1 throughout. */
 .dismiss:hover {
-	background-color: var(--stella-state-hover);
+	color: var(--stella-text-1) !important;
+	background-color: var(--stella-surface-2) !important;
 }
 
 .dismiss:active {
-	background-color: var(--stella-state-active);
+	color: var(--stella-text-1) !important;
+	background-color: var(--stella-surface-3) !important;
 }
 
-/* Press feedback — the × glyph squeezes on click; the button chrome
-   stays put (no whole-button scale). */
 .dismiss:active svg {
 	transform: scale(0.8);
-}
-
-.dismiss:focus-visible {
-	outline: 2px solid var(--stella-focus-ring);
-	outline-offset: 2px;
 }

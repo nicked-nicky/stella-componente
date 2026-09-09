@@ -1,9 +1,13 @@
-/**
- * @stella-componente/terra — GTK 4 / libadwaita-inspired React UI kit
- *
- * Atoms (base components)
- */
-export { Button, type ButtonProps, type ButtonSize } from './atoms/Button';
+export type { Grade } from './types/types';
+
+export type { Space } from './types/types';
+
+export {
+  Button,
+  type ButtonProps,
+  type ButtonSize,
+  type ButtonGrade,
+} from './atoms/Button';
 export {
   Badge,
   type BadgeProps,
@@ -25,12 +29,7 @@ export {
   type DividerProps,
   type DividerOrientation,
 } from './atoms/Divider';
-export {
-  Input,
-  type InputProps,
-  type InputVariant,
-  type InputSize,
-} from './atoms/Input';
+export { Input, type InputProps, type InputSize } from './atoms/Input';
 export { Icon, type IconProps, type IconSize } from './atoms/Icon';
 export {
   Text,
@@ -43,13 +42,9 @@ export {
   Island,
   type IslandProps,
   type IslandShape,
-  type IslandTone,
   type IslandElement,
 } from './atoms/Island';
 
-/**
- * Layout primitives
- */
 export {
   FlexContainer,
   type FlexContainerProps,
@@ -61,10 +56,11 @@ export {
   type FlexElement,
 } from './layout/FlexContainer';
 
-/**
- * Molecules
- */
-export { ButtonIsland, type ButtonIslandProps } from './molecules/ButtonIsland';
+export {
+  ButtonIsland,
+  type ButtonIslandProps,
+  type ButtonIslandOrientation,
+} from './molecules/ButtonIsland';
 export {
   Notification,
   type NotificationProps,
@@ -77,13 +73,11 @@ export {
   type WindowControlsHandlers,
 } from './molecules/WindowControls';
 
-/**
- * Organisms
- */
 export { Dialog, type DialogProps, type DialogSize } from './organisms/Dialog';
 export {
   SettingsMenu,
   type SettingsMenuProps,
+  type SettingsMenuGrade,
   type SettingsSchema,
   type SettingsCategory,
   type SettingsField,
@@ -104,12 +98,6 @@ export { Popover, type PopoverProps } from './organisms/Popover';
 export { Menu, type MenuProps, type MenuItemProps } from './organisms/Menu';
 export { WindowChrome, type WindowChromeProps } from './organisms/WindowChrome';
 
-/**
- * Hooks — the building blocks Tooltip/Popover/Menu are made of, also
- * exported directly for anyone composing a new anchored/dismissable
- * overlay type of their own (same escape hatch `useOverlayLayer` is,
- * for OverlayProvider).
- */
 export {
   useAnchorPosition,
   pointAnchor,
@@ -124,11 +112,6 @@ export {
   type UseDismissableOverlayResult,
 } from './hooks';
 
-/**
- * Providers — app-level systems (theming, overlay stacking,
- * notifications). Wrap these around your app root; everything else in
- * the kit is runtime-agnostic and needs none of them to function.
- */
 export {
   OverlayProvider,
   useOverlayContext,
@@ -140,11 +123,6 @@ export {
 } from './providers/NotificationProvider';
 export { ThemeProvider, useTheme } from './providers/ThemeProvider';
 
-/**
- * Theme engine — the framework-agnostic class behind ThemeProvider.
- * Most consumers only need ThemeProvider/useTheme; this is exposed for
- * anyone wiring theming outside React, or building custom bindings.
- */
 export {
   ThemeManager,
   DEFAULT_THEME_CONFIG,

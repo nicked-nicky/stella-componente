@@ -1,30 +1,3 @@
-import React from 'react';
-
-// ============================================================================
-// SYMBOLIC SVG GLYPHS
-//
-// Terra is otherwise icon-agnostic — Notification's `icon` prop, Button's
-// `leadingIcon`/`trailingIcon`, etc. all take consumer-supplied content, no
-// bundled icon library (see project principle: Terra stays thin). This file
-// is the one exception: the handful of chrome-level glyphs Terra's own
-// built-in controls need regardless of what icon library (if any) the
-// consumer uses — window controls, Dialog's close button, Notification's
-// dismiss button, and (Palette/Sun/Moon/Monitor below) the pre-built
-// `appearanceSettingsCategory` schema in organisms/SettingsMenu. Single
-// source of truth so a close glyph drawn once doesn't quietly drift into
-// two or three slightly-different inline copies (which is exactly what
-// had happened: Dialog, WindowControls, and Notification each carried
-// their own hand-rolled X).
-//
-// All render at a 16x16 viewBox, scaled to fill their container via
-// `width`/`height="100%"` — not a fixed pixel size — so they scale
-// correctly inside any Button `.icon` slot regardless of Button `size`
-// (see styles/shared/controlIcon.module.css's `1.25em` sizing; a fixed
-// 16px glyph doesn't track that). `display: block` on each avoids the
-// inline-SVG baseline gap that would otherwise nudge the glyph a pixel or
-// two off-center within its centered flex container.
-// ============================================================================
-
 export function CloseIcon() {
   return (
     <svg
@@ -206,6 +179,246 @@ export function MonitorIcon() {
         stroke="currentColor"
         strokeWidth="1.4"
         strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+export function CopyIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="100%"
+      height="100%"
+      fill="none"
+      style={{ display: 'block' }}
+      aria-hidden="true"
+    >
+      <rect
+        x="5.5"
+        y="5.5"
+        width="8"
+        height="8"
+        rx="1.3"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      />
+      <path
+        d="M3.5 10V3.8A1.3 1.3 0 0 1 4.8 2.5H11"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+export function CheckIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="100%"
+      height="100%"
+      fill="none"
+      style={{ display: 'block' }}
+      aria-hidden="true"
+    >
+      <path
+        d="M3.5 8.5L6.5 11.5L12.5 4.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function InfoIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="100%"
+      height="100%"
+      fill="none"
+      style={{ display: 'block' }}
+      aria-hidden="true"
+    >
+      <circle cx="8" cy="8" r="6.25" stroke="currentColor" strokeWidth="1.4" />
+      <path
+        d="M8 7.25v3.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <circle cx="8" cy="5.15" r="0.85" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function SuccessIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="100%"
+      height="100%"
+      fill="none"
+      style={{ display: 'block' }}
+      aria-hidden="true"
+    >
+      <circle cx="8" cy="8" r="6.25" stroke="currentColor" strokeWidth="1.4" />
+      <path
+        d="M5.25 8.25L7.1 10.1l3.65-4.2"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function WarningIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="100%"
+      height="100%"
+      fill="none"
+      style={{ display: 'block' }}
+      aria-hidden="true"
+    >
+      <path
+        d="M7.13 2.6 1.7 12.05a1 1 0 0 0 .87 1.5h10.86a1 1 0 0 0 .87-1.5L8.87 2.6a1 1 0 0 0-1.74 0Z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8 6.4v2.9"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <circle cx="8" cy="11.35" r="0.85" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function ErrorIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="100%"
+      height="100%"
+      fill="none"
+      style={{ display: 'block' }}
+      aria-hidden="true"
+    >
+      <circle cx="8" cy="8" r="6.25" stroke="currentColor" strokeWidth="1.4" />
+      <path
+        d="M5.9 5.9l4.2 4.2M10.1 5.9l-4.2 4.2"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+export function DebugIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="100%"
+      height="100%"
+      fill="none"
+      style={{ display: 'block' }}
+      aria-hidden="true"
+    >
+      <rect
+        x="4.75"
+        y="5.25"
+        width="6.5"
+        height="8"
+        rx="3.25"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      />
+      <path
+        d="M6.1 4.1 5.1 3.1M9.9 4.1l1-1M4.75 8.25h-2.5M13.75 8.25h-2.5M5.1 11.5l-1.6 1.2M10.9 11.5l1.6 1.2"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+export function SearchIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="100%"
+      height="100%"
+      fill="none"
+      style={{ display: 'block' }}
+      aria-hidden="true"
+    >
+      <circle
+        cx="7.25"
+        cy="7.25"
+        r="4.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M10.6 10.6l2.65 2.65"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+export function ChevronRightIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="100%"
+      height="100%"
+      fill="none"
+      style={{ display: 'block' }}
+      aria-hidden="true"
+    >
+      <path
+        d="M6 4l4 4-4 4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function ChevronDownIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="100%"
+      height="100%"
+      fill="none"
+      style={{ display: 'block' }}
+      aria-hidden="true"
+    >
+      <path
+        d="M4 6l4 4 4-4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );

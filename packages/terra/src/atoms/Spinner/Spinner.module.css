@@ -1,9 +1,3 @@
-/**
- * Spinner Component Styles
- * Single source of the spin animation — Button's loading state
- * consumes this component rather than duplicating the keyframes.
- */
-
 .spinner {
 	display: inline-block;
 	flex-shrink: 0;
@@ -22,8 +16,7 @@
 }
 
 .size-sm {
-	width: var(--stella-icon-size-sm);
-	height: var(--stella-icon-size-sm);
+	composes: size-sm from "../../styles/shared/iconSize.module.css";
 	border-width: 2px;
 }
 
@@ -34,8 +27,7 @@
 }
 
 .size-lg {
-	width: var(--stella-icon-size-lg);
-	height: var(--stella-icon-size-lg);
+	composes: size-lg from "../../styles/shared/iconSize.module.css";
 	border-width: 2.5px;
 }
 
@@ -45,32 +37,16 @@
 	}
 }
 
-/* Under prefers-reduced-motion the motion tokens collapse to ~zero (see
-   tokens.css), which would turn the spin into a strobe. Loading state is
-   essential feedback, so keep it — just at a calm, slow speed. The
-   appear fade is dropped entirely (instant reveal). */
 @media (prefers-reduced-motion: reduce) {
 	.spinner {
 		animation: stella-spin 1.5s linear infinite;
 	}
 }
 
-/* Same essential-motion exemption as the media query above, for
-   ThemeManager's explicit data-stella-motion="reduced" tier — an
-   in-app toggle should get the identical carve-out an OS setting
-   does. :global() reaches the ancestor attribute from inside this
-   CSS Module; .spinner itself stays locally scoped as usual. */
 :global([data-stella-motion="reduced"]) .spinner {
 	animation: stella-spin 1.5s linear infinite;
 }
 
-/* data-stella-motion="off" (see tokens.css) is a blanket
-   `animation: none !important` on every element — stronger than a
-   near-zero duration. Winning it back for Spinner needs `!important`
-   too; `[data-stella-motion="off"] .spinner` outweighs tokens.css's
-   `[data-stella-motion="off"] *` on specificity alone (a class beats
-   the universal selector), so this wins regardless of which
-   stylesheet a bundler happens to concatenate first. */
 :global([data-stella-motion="off"]) .spinner {
 	animation: stella-spin 1.5s linear infinite !important;
 }

@@ -1,0 +1,9 @@
+.focusFill {
+	outline: none;
+}
+
+.focusFill:focus-visible {
+	background-color: var(--stella-focus);
+	color: var(--stella-g-surface-0, var(--stella-focus-text));
+	border-color: transparent;
+}

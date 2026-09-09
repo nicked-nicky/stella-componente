@@ -5,21 +5,6 @@ import userEvent from '@testing-library/user-event';
 import { OverlayProvider } from '../../providers/OverlayProvider';
 import { Menu } from './Menu';
 
-// Menu implements WAI-ARIA menu keyboard behaviour by hand — arrow-key
-// roving, Home/End, typeahead, Tab-closes — with no native element
-// backing any of it. That's the same risk profile that justified giving
-// Switch a test: nothing about a <button role="menuitem"> makes the
-// browser supply this for free, so if the handler regresses the menu
-// still looks fine and is simply unusable by keyboard.
-
-/**
- * Menu with a real trigger element to anchor against.
- *
- * Starts closed and is opened by clicking the trigger, which is how a
- * dropdown is actually used. An earlier version of this harness rendered
- * `open` on first mount; that exercised a path real apps don't take and
- * masked every assertion behind an unrelated mount-ordering problem.
- */
 function MenuHarness({
   onClose,
   children,
@@ -45,11 +30,6 @@ function MenuHarness({
   );
 }
 
-/**
- * Renders the harness, opens the menu as a user would, and waits for the
- * open-focus to land on the first item — after which the menu is in the
- * steady state every test below assumes.
- */
 async function renderOpenMenu(children: ReactNode, onClose?: () => void) {
   const user = userEvent.setup();
   render(
@@ -60,21 +40,12 @@ async function renderOpenMenu(children: ReactNode, onClose?: () => void) {
   return user;
 }
 
-/** Waits for the open-focus to settle on a named item. */
 async function waitForFocus(name: string) {
   await waitFor(() =>
     expect(screen.getByRole('menuitem', { name })).toHaveFocus()
   );
 }
 
-/**
- * Returned as an array, not a fragment, and that distinction is load-
- * bearing: `Children.toArray` does not look inside a fragment, so
- * wrapping items in one collapses them to a single child and Menu's
- * auto-hairline pass finds no adjacent `Menu.Item` pairs to separate.
- * See the fragment test at the end of this file, which pins that
- * behaviour down rather than leaving it as a trap.
- */
 function defaultItems() {
   return [
     <Menu.Item key="copy">Copy</Menu.Item>,
@@ -91,21 +62,19 @@ describe('Menu — structure and ARIA', () => {
   });
 
   it('takes items out of the natural tab order (roving focus, not tab-through)', async () => {
-    // WAI-ARIA menus are a single tab stop; arrow keys move within.
     await renderOpenMenu(defaultItems());
     screen.getAllByRole('menuitem').forEach((item) => {
       expect(item).toHaveAttribute('tabindex', '-1');
     });
   });
 
-  it('auto-inserts a hairline separator between adjacent items', async () => {
+  it('renders no separator unless one is explicitly added', async () => {
     await renderOpenMenu(defaultItems());
     const menu = screen.getByRole('menu');
-    // Three items → two gaps between them.
-    expect(within(menu).getAllByRole('separator')).toHaveLength(2);
+    expect(within(menu).queryAllByRole('separator')).toHaveLength(0);
   });
 
-  it('does not stack a second hairline next to an explicit Menu.Separator', async () => {
+  it('supports an explicit Menu.Separator between items', async () => {
     await renderOpenMenu([
       <Menu.Item key="copy">Copy</Menu.Item>,
       <Menu.Separator key="sep" />,
@@ -113,22 +82,6 @@ describe('Menu — structure and ARIA', () => {
     ]);
     const menu = screen.getByRole('menu');
     expect(within(menu).getAllByRole('separator')).toHaveLength(1);
-  });
-
-  it('a fragment wrapper opts out of the auto-hairline', async () => {
-    // Not a bug being enshrined — a documented consequence of
-    // Children.toArray not descending into fragments. Worth pinning:
-    // the failure mode is silent (items render fine, hairlines just
-    // vanish), so without a test it reads as a styling regression.
-    await renderOpenMenu(
-      <>
-        <Menu.Item>Copy</Menu.Item>
-        <Menu.Item>Paste</Menu.Item>
-      </>
-    );
-    const menu = screen.getByRole('menu');
-    expect(within(menu).getAllByRole('menuitem')).toHaveLength(2);
-    expect(within(menu).queryAllByRole('separator')).toHaveLength(0);
   });
 
   it('is absent from the document when closed', () => {
@@ -143,10 +96,6 @@ describe('Menu — structure and ARIA', () => {
   });
 
   it('becomes visible on open rather than staying hidden behind its own measurement', async () => {
-    // Regression test: the panel starts at visibility:hidden until
-    // useAnchorPosition has measured it. If that measurement never runs,
-    // the menu is in the DOM but permanently invisible — and invisible to
-    // assistive tech, which is why every ByRole query would fail.
     await renderOpenMenu(defaultItems());
     const menu = screen.getByRole('menu');
     const positioner = menu.parentElement!;

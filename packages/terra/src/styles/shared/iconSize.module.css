@@ -1,0 +1,14 @@
+.size-sm {
+	width: var(--stella-icon-size-sm);
+	height: var(--stella-icon-size-sm);
+}
+
+.size-md {
+	width: var(--stella-icon-size-md);
+	height: var(--stella-icon-size-md);
+}
+
+.size-lg {
+	width: var(--stella-icon-size-lg);
+	height: var(--stella-icon-size-lg);
+}

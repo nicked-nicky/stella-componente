@@ -3,21 +3,12 @@ import { WindowChrome } from './WindowChrome';
 import { Button } from '../../atoms/Button';
 import { checkA11y } from '../../../playwright/a11y';
 
-// WindowChrome's contract is mostly geometric and mostly CSS: a
-// transparent strip at --stella-bar-height with the app canvas showing
-// through between four floating pills, everything inside marked
-// no-drag so the buttons stay clickable. None of that is observable in
-// jsdom — a transparent background and a missing background look
-// identical there.
-
 const controls = { minimize: () => {}, maximize: () => {}, close: () => {} };
 
 test.describe('the strip itself', () => {
   test('is transparent, letting the app canvas show through', async ({
     mount,
   }) => {
-    // The changelog's "WindowChrome lost its bottom seam" change — the
-    // bar is a transparent strip now, not a surface with a border.
     const component = await mount(
       <WindowChrome title="Ray IDE" windowControls={controls} />
     );
@@ -60,10 +51,6 @@ test.describe('drag region', () => {
   test('marks the bar draggable for Tauri via the DOM attribute', async ({
     mount,
   }) => {
-    // Terra is runtime-agnostic and can't know which host wraps it, so
-    // it carries both signals unconditionally — dropping either one
-    // silently breaks window dragging on that runtime only. This is the
-    // Tauri half; the Electron half is the CSS property below.
     const component = await mount(
       <WindowChrome title="Ray IDE" windowControls={controls} />
     );
@@ -81,10 +68,6 @@ test.describe('drag region', () => {
       getComputedStyle(el).getPropertyValue('-webkit-app-region').trim()
     );
 
-    // -webkit-app-region is non-standard and plain Chromium may not
-    // expose it to getComputedStyle at all, in which case there is
-    // nothing meaningful to assert — skip rather than fail, so this test
-    // reports honestly instead of going red on a browser difference.
     test.skip(
       appRegion === '',
       '-webkit-app-region not exposed by this browser build'
@@ -95,9 +78,6 @@ test.describe('drag region', () => {
   test('opts interactive pills out of the drag region so they stay clickable', async ({
     mount,
   }) => {
-    // A button inside a drag region that isn't marked no-drag swallows
-    // its own clicks — the window moves instead. This is the classic
-    // Electron title-bar gotcha the noDrag class exists to avoid.
     const component = await mount(
       <WindowChrome
         title="Ray IDE"
@@ -113,17 +93,6 @@ test.describe('drag region', () => {
     const region = await component
       .getByRole('button', { name: 'Close' })
       .evaluate((el) => {
-        // Walk up to whichever ancestor actually *declares* a region, the
-        // same way the host runtime's hit-testing does.
-        //
-        // `none` has to be skipped rather than treated as an answer:
-        // -webkit-app-region doesn't inherit, so every element that
-        // hasn't opted in computes to `none` — including the button
-        // itself. Stopping at the first non-empty value therefore always
-        // returned `none` and never reached the .noDrag wrapper.
-        //
-        // Typed as Element because parentElement can climb into
-        // non-HTML (SVG) elements.
         let node: Element | null = el;
         while (node) {
           const value = getComputedStyle(node)
@@ -140,6 +109,32 @@ test.describe('drag region', () => {
       '-webkit-app-region not exposed by this browser build'
     );
     expect(region).toBe('no-drag');
+  });
+
+  test('the title itself stays draggable, the way an OS title bar does', async ({
+    mount,
+  }) => {
+    const component = await mount(
+      <WindowChrome title="Ray IDE" windowControls={controls} />
+    );
+
+    const region = await component.getByText('Ray IDE').evaluate((el) => {
+      let node: Element | null = el;
+      while (node) {
+        const value = getComputedStyle(node)
+          .getPropertyValue('-webkit-app-region')
+          .trim();
+        if (value && value !== 'none') return value;
+        node = node.parentElement;
+      }
+      return '';
+    });
+
+    test.skip(
+      region === '',
+      '-webkit-app-region not exposed by this browser build'
+    );
+    expect(region).toBe('drag');
   });
 
   test('double-clicking the bar toggles maximize, matching OS behaviour', async ({
@@ -214,9 +209,6 @@ test.describe('render modes', () => {
   test('clusters of different size still line up on one baseline', async ({
     mount,
   }) => {
-    // The changelog's ButtonIsland height fix: a sm WindowControls and an
-    // md systemTools group sitting side by side used to render at
-    // different heights, one floating centred with dead space around it.
     const component = await mount(
       <WindowChrome
         title="Ray IDE"

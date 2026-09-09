@@ -1,0 +1,38 @@
+.field {
+	display: flex;
+	flex-direction: column;
+	gap: var(--stella-space-2);
+	width: 100%;
+}
+
+.fieldLabel {
+	font-family: var(--stella-font-ui);
+	font-size: var(--stella-text-body-strong);
+	font-weight: var(--stella-text-body-strong-weight);
+	color: var(--stella-text-0);
+	cursor: pointer;
+}
+
+.surface {
+	background-color: var(--stella-g-surface-0);
+	border-color: var(--stella-g-border-0);
+	box-shadow: var(--stella-shadow-xs);
+}
+
+.size-sm {
+	min-height: var(--stella-size-sm);
+	padding: 0 var(--stella-space-2);
+	font-size: var(--stella-text-caption);
+}
+
+.size-md {
+	min-height: var(--stella-size-md);
+	padding: 0 var(--stella-space-3);
+	font-size: var(--stella-text-body);
+}
+
+.size-lg {
+	min-height: var(--stella-size-lg);
+	padding: 0 var(--stella-space-4);
+	font-size: var(--stella-text-body);
+}

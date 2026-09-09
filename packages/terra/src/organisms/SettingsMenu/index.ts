@@ -1,4 +1,8 @@
-export { SettingsMenu, type SettingsMenuProps } from './SettingsMenu';
+export {
+  SettingsMenu,
+  type SettingsMenuProps,
+  type SettingsMenuGrade,
+} from './SettingsMenu';
 export type {
   SettingsSchema,
   SettingsCategory,

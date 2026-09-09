@@ -1,49 +1,27 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import styles from './Spinner.module.css';
+import type { SizeXSL } from '../../types/types';
+import { cx } from '../../utils/cx';
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
-type SpinnerSize = 'xs' | 'sm' | 'md' | 'lg';
+type SpinnerSize = SizeXSL;
 
 interface SpinnerProps extends React.HTMLAttributes<HTMLSpanElement> {
-  /**
-   * @default 'md'
-   */
   size?: SpinnerSize;
 }
 
-// ============================================================================
-// COMPONENT
-// ============================================================================
-
-/**
- * Spinner - indeterminate loading indicator. Inherits `currentColor`,
- * so it matches whatever text color surrounds it (used internally by
- * Button's `loading` state, also usable standalone).
- *
- * @example
- * ```tsx
- * <Spinner />
- * <Spinner size="sm" />
- * <span style={{ color: 'var(--stella-info-text)' }}>
- *   <Spinner />
- * </span>
- * ```
- */
-export function Spinner({ size = 'md', className, ...props }: SpinnerProps) {
-  return (
-    <span
-      role="status"
-      aria-label="Loading"
-      className={[styles.spinner, styles[`size-${size}`], className]
-        .filter(Boolean)
-        .join(' ')}
-      {...props}
-    />
-  );
-}
+export const Spinner = forwardRef<HTMLSpanElement, SpinnerProps>(
+  ({ size = 'md', className, ...props }, ref) => {
+    return (
+      <span
+        ref={ref}
+        role="status"
+        aria-label="Loading"
+        className={cx(styles.spinner, styles[`size-${size}`], className)}
+        {...props}
+      />
+    );
+  }
+);
 
 Spinner.displayName = 'Spinner';
 

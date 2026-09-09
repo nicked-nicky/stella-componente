@@ -4,22 +4,19 @@ import { Divider } from '../../atoms/Divider';
 import { FlexContainer } from '../../layout/FlexContainer';
 import { SettingsFieldRow } from './fields/SettingsFieldRow';
 import type { SettingsCategory, SettingsFieldValue } from './types';
+import type { Grade } from '../../types/types';
 import styles from './SettingsMenu.module.css';
 
 interface SettingsCategoryPanelProps {
   category: SettingsCategory;
+  grade: Grade;
   values: Record<string, SettingsFieldValue>;
   onFieldChange: (key: string, value: SettingsFieldValue) => void;
 }
 
-/**
- * SettingsCategoryPanel - the right-hand pane: category title/
- * description, then every field in it dispatched through
- * `SettingsFieldRow`, separated by a quiet row `Divider`. Internal
- * decomposition detail of `SettingsMenu`, not exported.
- */
 export function SettingsCategoryPanel({
   category,
+  grade,
   values,
   onFieldChange,
 }: SettingsCategoryPanelProps) {
@@ -49,7 +46,7 @@ export function SettingsCategoryPanel({
       <FlexContainer direction="column" gap="0">
         {category.fields.map((field, idx) => (
           <Fragment key={field.key}>
-            <div style={{ padding: 'var(--stella-space-4) 0' }}>
+            <div className={styles.fieldRow} data-stella-grade={grade}>
               <SettingsFieldRow
                 categoryId={category.id}
                 field={field}

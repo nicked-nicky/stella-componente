@@ -1,121 +1,20 @@
-/**
- * Menu — anchored action list (dropdown or context menu). Same
- * ButtonIsland pattern: the panel owns all the rounding, items are
- * square and flush, and the hairline between them is a real
- * auto-inserted `Divider` (dimmed via `.autoSeparator` — one shade
- * quieter than an explicit `Menu.Separator`'s louder default). See
- * WIKI.md's Architecture reference for the full reasoning.
- *
- * @format
- */
-
 .menu {
-	min-width: 180px;
-	max-width: min(320px, calc(100vw - var(--stella-space-8)));
-	outline: none;
-
-	display: flex;
-	flex-direction: column;
-
-	/* Shared with Popover — see tokens.css's `stella-overlay-pop` keyframes. */
+	min-width: var(--stella-overlay-width-xs);
+	max-width: min(
+		var(--stella-overlay-width-lg),
+		calc(100vw - var(--stella-space-8))
+	);
 	animation: var(--stella-overlay-pop-animation);
 }
 
-.item {
-	display: flex;
-	align-items: center;
-	gap: var(--stella-space-2);
-	width: 100%;
-
-	padding: var(--stella-space-2) var(--stella-space-3);
-	border: none;
-	border-radius: 0;
-	background-color: transparent;
-	color: var(--stella-text-primary);
-
-	font-family: var(--stella-font-ui);
-	font-size: var(--stella-text-body);
-	text-align: left;
-	cursor: pointer;
-	user-select: none;
-	-webkit-user-select: none;
-
-	transition:
-		background-color var(--stella-motion-fast) var(--stella-easing-out),
-		color var(--stella-motion-fast) var(--stella-easing-out);
+.item[data-active]:not(:focus-visible) {
+	background-color: var(--stella-selected);
 }
 
-/* Auto-inserted per-item hairline (Menu.tsx) — one shade quieter than
-   an explicit `Menu.Separator`'s own default, since it's a row
-   boundary inside one group, not an actual break. */
-.autoSeparator {
-	background-color: var(--stella-border-subtle);
+.menu[data-stella-grade] .item[data-active]:hover:not(:disabled) {
+	background-color: var(--stella-selected);
 }
 
-/* ============================================================================
-   SEPARATOR ESCALATION — same idea as ButtonIsland's: any Divider in
-   the group (auto-inserted or an explicit `Menu.Separator`, matched via
-   `[role="separator"]` — Divider's own accessible role) brightens right
-   along with a hovered/pressed item on either side of it, the same two
-   tokens the item's own background-layer ladder uses. `+` covers
-   "hovered on the near side," `:has()` covers "hovered on the far side"
-   (`+` alone only looks forward).
-   ============================================================================ */
-
-.menu > .item:hover:not(:disabled) + [role="separator"],
-.menu > [role="separator"]:has(+ .item:hover:not(:disabled)) {
-	background-color: var(--stella-state-hover);
-}
-
-.menu > .item:active:not(:disabled) + [role="separator"],
-.menu > [role="separator"]:has(+ .item:active:not(:disabled)) {
-	background-color: var(--stella-state-active);
-}
-
-/* Translucent state layer, not an opaque fill — composites over the
-   panel's own surface whatever tone that happens to be. See the STATE
-   LAYERS section in tokens.css. */
-.item:hover:not(:disabled),
-.item:focus-visible {
-	background-color: var(--stella-state-hover);
-}
-
-.item:active:not(:disabled) {
-	background-color: var(--stella-state-active);
-}
-
-.item:focus-visible {
-	outline: 2px solid var(--stella-focus-ring);
-	outline-offset: -2px;
-}
-
-.item:disabled {
-	color: var(--stella-text-disabled);
-	cursor: not-allowed;
-}
-
-/* Persistent "selected" mark — the top rung of the same state-layer
-   ladder Button's `active` uses, so a selected menu item and a
-   selected Button are literally the same token. */
-.item[data-active],
-.item[data-active]:hover:not(:disabled) {
-	background-color: var(--stella-state-selected);
-}
-
-.item[data-destructive] {
+.item[data-destructive]:not(:focus-visible) {
 	color: var(--stella-error-text);
-}
-
-.itemIcon {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	flex-shrink: 0;
-	width: 1.25em;
-	height: 1.25em;
-}
-
-.itemLabel {
-	flex: 1;
-	min-width: 0;
 }

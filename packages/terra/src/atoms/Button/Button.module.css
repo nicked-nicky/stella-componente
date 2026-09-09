@@ -1,85 +1,42 @@
-/**
- * Button Component Styles
- *
- * No surface, radius, or border of its own — all come from the
- * wrapping Island. No variants either: one neutral look; status color
- * lives on Badge/Notification instead. See WIKI.md's Architecture
- * reference for the border/surface model.
- *
- * @format
- */
-
-/* ============================================================================
-   BASE BUTTON
-   ============================================================================ */
-
 .button {
-	/* Layout */
+	composes: focusFill from "../../styles/shared/focusFill.module.css";
+
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	gap: var(--stella-space-1);
 	position: relative;
 
-	/* Mount fade-in — shared `stella-appear` keyframes in tokens.css.
-     `backwards` fill: once it ends the button returns to its natural
-     styles, so the :active press effect keeps working. */
 	animation: var(--stella-appear-animation);
 
-	/* Typography */
 	font-family: var(--stella-font-ui);
 	font-size: var(--stella-text-body);
 	font-weight: 600;
 	line-height: 1;
 
-	/* Padding (size-specific) */
 	padding: var(--stella-space-2) var(--stella-space-4);
 
-	/* No radius, no border — both are Island's job, not Button's. Bare
-     outside an Island = square on purpose (signal to wrap it). See
-     WIKI.md's Architecture reference. */
 	border: none;
+	border-left: var(--stella-border-width) solid transparent;
+	border-right: var(--stella-border-width) solid transparent;
 	border-radius: 0;
 
-	/* No surface of its own either — see the SURFACE section below. */
 	background-color: transparent;
-	color: var(--stella-text-secondary);
+	color: var(--stella-text-1);
 
-	/* Interaction */
 	cursor: pointer;
 	user-select: none;
 	-webkit-user-select: none;
 
-	/* Transitions — color/background stay on the plain easing; the
-     icon's press squeeze gets the springy curve (feedback should feel
-     physical, a spring on a color fade reads as a glitch). */
 	transition:
 		background-color var(--stella-motion-fast) var(--stella-easing-out),
+		border-color var(--stella-motion-fast) var(--stella-easing-out),
 		color var(--stella-motion-fast) var(--stella-easing-out);
 }
 
-/* Focus ring — INSET (negative offset), unlike the outset rings on
-   Checkbox/Radio/Switch. Button is always meant to live inside an
-   Island, and Island clips its children (`overflow: hidden`, on by
-   default), so a ring drawn outside the button's border box would be
-   cut off by the wrapping pill and effectively invisible. Drawing it
-   inside keeps it fully visible in a linked group. Same approach as
-   `.item:focus-visible` in Menu.module.css. */
-.button:focus-visible {
-	outline: 2px solid var(--stella-focus-ring);
-	outline-offset: -2px;
-}
-
-/* Press feedback — the icon inside squeezes down on click (release
-   snaps back via the same spring curve). The button chrome stays put:
-   no whole-control scale, the action lives on the icon. */
 .button:active:not(:disabled) .icon {
 	transform: scale(0.95) translateY(2px);
 }
-
-/* ============================================================================
-   SIZING
-   ============================================================================ */
 
 .size-xs {
 	min-height: var(--stella-size-xs);
@@ -105,42 +62,30 @@
 	padding: 0 var(--stella-space-5);
 }
 
-/* ============================================================================
-   SURFACE — deliberately none. The wrapping Island's tone is what's
-   actually visible behind a Button; interaction is a pure state-layer
-   ladder (hover → press → selected) over that inherited surface, same
-   two tokens the Island's own border escalates through via `:has()`.
-   See WIKI.md's Architecture reference for the full reasoning.
-   ============================================================================ */
+.button {
+	border-left-color: var(--stella-g-border-0);
+	border-right-color: var(--stella-g-border-0);
+}
 
 .button:hover:not(:disabled) {
-	background-color: var(--stella-state-hover);
-	color: var(--stella-text-primary);
+	background-color: var(--stella-g-surface-1);
+	border-left-color: var(--stella-g-border-1);
+	border-right-color: var(--stella-g-border-1);
+	color: var(--stella-text-0);
 }
 
 .button:active:not(:disabled) {
-	background-color: var(--stella-state-active);
-	color: var(--stella-text-primary);
+	background-color: var(--stella-g-surface-2);
+	border-left-color: var(--stella-g-border-2);
+	border-right-color: var(--stella-g-border-2);
+	color: var(--stella-text-0);
 }
 
-/* ============================================================================
-   STATE: ACTIVE (Selected) — persistent "on" state (the `active` prop).
-   Top rung of the same state-layer ladder, not a bespoke color — a
-   selected Button, Menu.Item, and SettingsMenu row are the same token.
-   Repeated across interaction states so it out-specifies
-   `.button:hover/:active` and never flickers back while hovered/pressed.
-   ============================================================================ */
-
-.button.active,
-.button.active:hover:not(:disabled),
-.button.active:active:not(:disabled) {
-	background-color: var(--stella-state-selected);
-	color: var(--stella-text-primary);
+.button.active:not(:focus-visible),
+.button.active:active:not(:disabled):not(:focus-visible) {
+	background-color: var(--stella-g-surface-1);
+	color: var(--stella-text-0);
 }
-
-/* ============================================================================
-   STATE: DISABLED
-   ============================================================================ */
 
 .disabled {
 	cursor: not-allowed;
@@ -148,15 +93,10 @@
 	pointer-events: none;
 }
 
-/* ============================================================================
-   STATE: LOADING
-   ============================================================================ */
-
 .loading {
 	cursor: wait;
 }
 
-/* Spinner overlay — ring animation itself lives in the Spinner atom */
 .spinnerContainer {
 	position: absolute;
 	inset: 0;
@@ -166,22 +106,18 @@
 	pointer-events: none;
 }
 
-/* ============================================================================
-   CONTENT LAYOUT
-   ============================================================================ */
-
 .icon {
 	composes: icon from "../../styles/shared/controlIcon.module.css";
-	/* Springy press squeeze (see the :active rule above) */
 	transition: transform var(--stella-motion-fast) var(--stella-easing-spring);
 }
 
 .text {
 	display: inline-flex;
 	align-items: center;
+	flex: 1;
+	min-width: 0;
 }
 
-/* Icon-only button */
 .iconOnly {
 	padding: 0;
 	width: var(--stella-size-md);

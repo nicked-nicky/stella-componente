@@ -1,14 +1,4 @@
-/**
- * Icon Component Styles
- *
- * Fixed 16/20/24px grid. Deliberately NOT density-scaled: icons are
- * drawn on a pixel grid and scaling them by a fractional multiplier
- * (0.85 / 1.15) lands strokes on half-pixels and blurs them. See
- * COMPONENT SIZING in tokens.css.
- */
-
 .icon {
-	/* Mount fade-in — shared `stella-appear` keyframes in tokens.css. */
 	animation: var(--stella-appear-animation);
 
 	display: inline-flex;
@@ -24,16 +14,13 @@
 }
 
 .size-sm {
-	width: var(--stella-icon-size-sm);
-	height: var(--stella-icon-size-sm);
+	composes: size-sm from "../../styles/shared/iconSize.module.css";
 }
 
 .size-md {
-	width: var(--stella-icon-size-md);
-	height: var(--stella-icon-size-md);
+	composes: size-md from "../../styles/shared/iconSize.module.css";
 }
 
 .size-lg {
-	width: var(--stella-icon-size-lg);
-	height: var(--stella-icon-size-lg);
+	composes: size-lg from "../../styles/shared/iconSize.module.css";
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { FlexContainer } from '../../layout/FlexContainer';
+import { ScrollArea } from '../../layout/ScrollArea';
 import { SettingsNav } from './SettingsNav';
 import { SettingsCategoryPanel } from './SettingsCategoryPanel';
 import type {
@@ -8,50 +9,28 @@ import type {
   SettingsFieldValue,
 } from './types';
 import styles from './SettingsMenu.module.css';
+import { resolveGrade } from '../../internal/grade';
+import type { Grade } from '../../types/types';
 
-// ============================================================================
-// TYPES
-// ============================================================================
+type SettingsMenuGrade = Grade;
 
 interface SettingsMenuProps {
-  /** The category/field structure — this is the "data" the menu drives off of. */
+  grade?: SettingsMenuGrade;
+
   schema: SettingsSchema;
-  /** Current field values. Fully controlled — SettingsMenu holds no data of its own. */
   values: SettingsValues;
   onChange: (
     categoryId: string,
     fieldKey: string,
     value: SettingsFieldValue
   ) => void;
-  /** Controlled category selection. Omit to let SettingsMenu manage it internally. */
   selectedCategoryId?: string;
   onCategoryChange?: (categoryId: string) => void;
-  /** Initial category when uncontrolled. Defaults to the first in `schema.categories`. */
   defaultCategoryId?: string;
 }
 
-// ============================================================================
-// COMPONENT
-// ============================================================================
-
-/**
- * SettingsMenu - data-driven settings UI: categories on the left
- * (`SettingsNav`), the selected category's fields on the right
- * (`SettingsCategoryPanel` → `SettingsFieldRow` → one renderer per
- * field type in `fields/`). Fully controlled, same principle as
- * `ThemeManager`: renders a schema and reports changes, never owns or
- * persists values itself.
- *
- * Split across multiple files as the reference example for how to
- * decompose a growing organism — see WIKI.md's Component Structure
- * section for the full schema/usage example and the reasoning.
- *
- * @example
- * ```tsx
- * <SettingsMenu schema={schema} values={values} onChange={handleChange} />
- * ```
- */
 export function SettingsMenu({
+  grade: gradeProp,
   schema,
   values,
   onChange,
@@ -59,6 +38,8 @@ export function SettingsMenu({
   onCategoryChange,
   defaultCategoryId,
 }: SettingsMenuProps) {
+  const grade = resolveGrade(gradeProp, 'default');
+
   const [internalSelected, setInternalSelected] = useState(
     defaultCategoryId ?? schema.categories[0]?.id
   );
@@ -74,27 +55,33 @@ export function SettingsMenu({
     schema.categories.find((c) => c.id === activeId) ?? schema.categories[0];
 
   return (
-    <FlexContainer align="stretch" className={styles.root}>
+    <FlexContainer
+      align="stretch"
+      className={styles.root}
+      data-stella-grade={grade}
+    >
       <SettingsNav
         categories={schema.categories}
         activeId={activeId}
         onSelect={handleSelect}
+        grade={grade}
       />
-      <div className={styles.panel}>
+      <ScrollArea grow padding="6">
         {activeCategory && (
           <SettingsCategoryPanel
             category={activeCategory}
+            grade={grade}
             values={values[activeCategory.id] ?? {}}
             onFieldChange={(key, value) =>
               onChange(activeCategory.id, key, value)
             }
           />
         )}
-      </div>
+      </ScrollArea>
     </FlexContainer>
   );
 }
 
 SettingsMenu.displayName = 'SettingsMenu';
 
-export type { SettingsMenuProps };
+export type { SettingsMenuProps, SettingsMenuGrade };

@@ -1,23 +1,4 @@
-/**
- * Avatar Component Styles
- *
- * Sizes read the shared --stella-size-* control scale rather than a
- * bespoke set of pixel values, so an Avatar lines up with a Button or
- * Input of the same size token when they sit in the same row — which is
- * the common case (a user row, a toolbar, a comment header).
- *
- * Initials scale from the same token via a fixed ratio instead of five
- * hardcoded font sizes, so the two can never drift apart.
- *
- * Like every other control, these are pointer/recognition targets and
- * deliberately do NOT scale with density — see COMPONENT SIZING in
- * tokens.css.
- *
- * @format
- */
-
 .avatar {
-	/* Mount fade-in — shared `stella-appear` keyframes in tokens.css. */
 	animation: var(--stella-appear-animation);
 
 	display: inline-flex;
@@ -26,10 +7,14 @@
 	flex-shrink: 0;
 	overflow: hidden;
 
-	border: var(--stella-border-width) solid var(--stella-border-default);
+	border: var(--stella-border-width) solid transparent;
 	border-radius: var(--stella-radius-panel);
-	background-color: var(--stella-surface-muted);
-	color: var(--stella-text-secondary);
+	color: var(--stella-text-1);
+}
+
+.avatar {
+	background-color: var(--stella-g-surface-0);
+	border-color: var(--stella-g-border-0);
 }
 
 .size-xs {

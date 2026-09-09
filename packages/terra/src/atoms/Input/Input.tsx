@@ -1,87 +1,72 @@
 import React, { forwardRef } from 'react';
 import styles from './Input.module.css';
+import type { Grade, SizeSML } from '../../types/types';
+import { resolveGrade } from '../../internal/grade';
+import { cx } from '../../utils/cx';
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
-type InputVariant = 'default' | 'filled';
-type InputSize = 'sm' | 'md' | 'lg';
+type InputSize = SizeSML;
 
 interface InputProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
   'size'
 > {
-  /**
-   * @default 'default'
-   */
-  variant?: InputVariant;
+  grade?: Grade;
 
-  /**
-   * @default 'md'
-   */
   size?: InputSize;
 
-  /**
-   * Visual + semantic invalid state (sets `aria-invalid`). Rendering the
-   * actual error message is a molecule-level concern (see `InputField`)
-   * — this atom only handles the visual/ARIA signal.
-   * @default false
-   */
   error?: boolean;
 
-  /** Icon rendered inside the field, before the text. */
   leadingIcon?: React.ReactNode;
 
-  /** Icon rendered inside the field, after the text. */
   trailingIcon?: React.ReactNode;
+
+  /**
+   * Trailing slot for interactive/live content (a clear button, a loading
+   * spinner with its own role="status", etc). Unlike trailingIcon, this is
+   * never wrapped in aria-hidden — that would hide a real control (or a
+   * status announcement) from assistive tech, which is only correct for a
+   * purely decorative glyph.
+   */
+  trailingAction?: React.ReactNode;
+
+  label?: React.ReactNode;
+
+  fullWidth?: boolean;
 }
 
-// ============================================================================
-// COMPONENT
-// ============================================================================
-
-/**
- * Input - bare text field atom. Label association, helper text, and
- * error messages are composed at the molecule level (`InputField`
- * wraps this with a `<label>` + error text) — this atom stays a plain
- * styled `<input>` so it's reusable in contexts that need their own
- * label markup.
- *
- * @example
- * ```tsx
- * <Input placeholder="Email" />
- * <Input variant="filled" size="lg" />
- * <Input leadingIcon={<SearchIcon />} placeholder="Search" />
- * <Input error aria-describedby="email-error" />
- * <Input disabled value="Read only" />
- * ```
- */
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   (
     {
-      variant = 'default',
+      grade: gradeProp,
       size = 'md',
       error = false,
       leadingIcon,
       trailingIcon,
+      trailingAction,
+      label,
       disabled,
+      id,
       className,
+      fullWidth = true,
       ...props
     },
     ref
   ) => {
-    return (
+    const grade = resolveGrade(gradeProp, 'default');
+
+    const autoId = React.useId();
+    const inputId = label ? (id ?? autoId) : id;
+
+    const field = (
       <span
-        className={[
+        data-stella-grade={grade}
+        className={cx(
           styles.wrapper,
-          styles[variant],
           styles[`size-${size}`],
+          fullWidth && styles.fullWidth,
           error && styles.error,
-          disabled && styles.disabled,
-        ]
-          .filter(Boolean)
-          .join(' ')}
+          disabled && styles.disabled
+        )}
       >
         {leadingIcon && (
           <span className={styles.icon} aria-hidden="true">
@@ -90,9 +75,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <input
           ref={ref}
+          id={inputId}
           disabled={disabled}
           aria-invalid={error || undefined}
-          className={[styles.input, className].filter(Boolean).join(' ')}
+          className={cx(styles.input, className)}
           {...props}
         />
         {trailingIcon && (
@@ -100,6 +86,20 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {trailingIcon}
           </span>
         )}
+        {trailingAction && (
+          <span className={styles.icon}>{trailingAction}</span>
+        )}
+      </span>
+    );
+
+    if (!label) return field;
+
+    return (
+      <span className={styles.field}>
+        <label htmlFor={inputId} className={styles.fieldLabel}>
+          {label}
+        </label>
+        {field}
       </span>
     );
   }
@@ -107,4 +107,4 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
 Input.displayName = 'Input';
 
-export type { InputProps, InputVariant, InputSize };
+export type { InputProps, InputSize };

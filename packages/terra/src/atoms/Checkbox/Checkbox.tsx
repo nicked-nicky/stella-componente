@@ -1,60 +1,27 @@
 import React, { forwardRef, useEffect, useRef } from 'react';
 import { mergeRefs } from '../../utils/mergeRefs';
-import { usePulse } from '../../utils/usePulse';
 import styles from './Checkbox.module.css';
+import type { Grade, SizeSM } from '../../types/types';
+import { resolveGrade } from '../../internal/grade';
+import { cx } from '../../utils/cx';
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
-type CheckboxSize = 'sm' | 'md';
+type CheckboxSize = SizeSM;
 
 interface CheckboxProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
   'type' | 'size'
 > {
-  /**
-   * @default 'md'
-   */
   size?: CheckboxSize;
-
-  /**
-   * Visually and semantically indeterminate (e.g. "some children checked").
-   * Applied via ref since HTML has no `indeterminate` attribute.
-   * @default false
-   */
+  grade?: Grade;
   indeterminate?: boolean;
-
-  /**
-   * Optional label text rendered next to the box. For full control over
-   * label markup, omit this and wrap Checkbox in your own <label>.
-   */
   label?: React.ReactNode;
 }
 
-// ============================================================================
-// COMPONENT
-// ============================================================================
-
-/**
- * Checkbox - built on a native `<input type="checkbox">`.
- *
- * Using the real element (rather than a `role="checkbox"` div) gives
- * keyboard support, label association, and form participation for free —
- * only the visual box is custom-styled via a sibling element.
- *
- * @example
- * ```tsx
- * <Checkbox label="Accept terms" />
- * <Checkbox size="sm" defaultChecked />
- * <Checkbox indeterminate label="Select all" />
- * <Checkbox disabled label="Unavailable" />
- * ```
- */
 export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
   (
     {
       size = 'md',
+      grade: gradeProp,
       indeterminate = false,
       label,
       className,
@@ -64,9 +31,10 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
     },
     forwardedRef
   ) => {
+    const grade = resolveGrade(gradeProp, 'default');
+
     const innerRef = useRef<HTMLInputElement>(null);
 
-    // Merge forwarded ref with internal ref so we can set .indeterminate
     useEffect(() => {
       if (innerRef.current) {
         innerRef.current.indeterminate = indeterminate;
@@ -78,37 +46,20 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
     const autoId = React.useId();
     const inputId = id ?? autoId;
 
-    // Commit pulse — see usePulse's docs. Only triggered from a real
-    // onChange event below, never derived from `checked` itself, so a
-    // Checkbox that simply *renders* pre-checked (a common demo/initial
-    // state) never fires it on mount.
-    const [pulsing, triggerPulse] = usePulse();
-
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      if (event.target.checked) triggerPulse();
-      onChange?.(event);
-    };
-
     const input = (
-      <span className={[styles.wrapper, styles[`size-${size}`]].join(' ')}>
+      <span
+        data-stella-grade={grade}
+        className={[styles.wrapper, styles[`size-${size}`]].join(' ')}
+      >
         <input
           ref={setRefs}
           type="checkbox"
           id={inputId}
-          className={[styles.input, className].filter(Boolean).join(' ')}
-          onChange={handleChange}
+          className={cx(styles.input, className)}
+          onChange={onChange}
           {...props}
         />
-        <span
-          className={[styles.box, pulsing && styles.pulsing]
-            .filter(Boolean)
-            .join(' ')}
-          aria-hidden="true"
-        >
-          {/* Expanding ring played on every check-on, see
-              Checkbox.module.css's PULSE section. Sits behind the icons
-              (first in DOM = painted first) so the mark stays crisp on top. */}
-          <span className={styles.pulseRing} />
+        <span className={styles.box} aria-hidden="true">
           <svg
             className={styles.checkIcon}
             viewBox="0 0 16 16"

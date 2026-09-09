@@ -2,26 +2,11 @@ import { test, expect } from '@playwright/experimental-ct-react';
 import { SettingsMenuFixture } from './SettingsMenu.story';
 import { checkA11y } from '../../../playwright/a11y';
 
-// SettingsMenu's current-row treatment is a resolved-CSS fact, so it
-// belongs here rather than in a jsdom test.
-//
-// The mount target lives in SettingsMenu.story.tsx rather than in this
-// file: Playwright CT compiles the test file for Node and the component
-// tree for the browser separately, so a component *defined* in a
-// .ct.tsx file can't cross that boundary — mount() rejects it with
-// "cannot be mounted, create a test story instead". Imported components
-// are fine, which is why Button and WindowChrome mount inline.
-
 test.describe('nav row states', () => {
   test('the current category stays lit whether or not it is hovered', async ({
     mount,
     page,
   }) => {
-    // SettingsMenu.module.css states the intent outright: "Active is just
-    // hover, but sticky." The current row and a hovered row share a fill
-    // by design, so what makes the current one findable is that it holds
-    // that fill with nothing pointing at it — asserted here across a
-    // hover of a *different* row, which must not disturb it.
     const component = await mount(<SettingsMenuFixture />);
 
     const current = component.getByRole('button', { name: /General/ });
@@ -33,9 +18,6 @@ test.describe('nav row states', () => {
     expect(atRest).not.toBe('rgba(0, 0, 0, 0)');
 
     await other.hover();
-    // Outlasts the transition window on purpose: a "must not change"
-    // assertion read immediately would sample the old value and stay
-    // green even if hovering a sibling did disturb the current row.
     await page.waitForTimeout(250);
     const whileOtherHovered = await current.evaluate(
       (el) => getComputedStyle(el).backgroundColor
@@ -66,20 +48,27 @@ test.describe('nav row states', () => {
     ).not.toHaveAttribute('aria-current', 'true');
   });
 
-  test('nav rows show a visible focus ring on keyboard focus', async ({
+  test('nav rows invert on keyboard focus rather than drawing an outline', async ({
     mount,
     page,
   }) => {
     const component = await mount(<SettingsMenuFixture />);
-    await page.keyboard.press('Tab');
-
     const focused = component.getByRole('button', { name: /General/ });
+
+    const read = () =>
+      focused.evaluate((el) => {
+        const s = getComputedStyle(el);
+        return { background: s.backgroundColor, color: s.color };
+      });
+
+    const resting = await read();
+    await page.keyboard.press('Tab');
     await expect(focused).toBeFocused();
 
-    const outlineStyle = await focused.evaluate(
-      (el) => getComputedStyle(el).outlineStyle
-    );
-    expect(outlineStyle).not.toBe('none');
+    await expect
+      .poll(async () => (await read()).background)
+      .not.toBe(resting.background);
+    expect((await read()).color).not.toBe(resting.color);
   });
 });
 
@@ -94,52 +83,25 @@ test.describe('field controls', () => {
     await expect(component.getByLabel('Display name')).toHaveCount(0);
   });
 
-  test('a focused text field draws a real focus ring, not just a border colour change', async ({
+  test('a focused text field recolours its own border instead of drawing a ring', async ({
     mount,
   }) => {
-    // The changelog records Input's error state setting outline-color
-    // with no outline-style, so the declaration painted nothing — a
-    // border-colour-only focus signal is exactly what that produced.
-    //
-    // The ring lives on Input's wrapper <span>, not on the <input>:
-    // the wrapper carries the whole visual box so leading/trailing icons
-    // sit inside the same bordered field, and the input itself is
-    // deliberately borderless and transparent. Reading `outline` off the
-    // input therefore always reports `none` no matter what the component
-    // does.
-    //
-    // The wrapper declares `outline: 2px solid transparent` up front so
-    // focus is a pure colour swap with no layout shift — which is why
-    // the assertion is on outline-*color* changing, not on the outline
-    // appearing.
     const component = await mount(<SettingsMenuFixture />);
     const field = component.getByLabel('Display name');
 
-    const readRing = () =>
+    const read = () =>
       field.evaluate((el) => {
         const s = getComputedStyle(el.parentElement!);
-        return {
-          style: s.outlineStyle,
-          width: s.outlineWidth,
-          color: s.outlineColor,
-        };
+        return { border: s.borderTopColor, outlineStyle: s.outlineStyle };
       });
 
-    const resting = await readRing();
-    expect(resting.color).toBe('rgba(0, 0, 0, 0)');
-
+    const resting = await read();
     await field.focus();
 
-    // Polled, not read once: outline-color is transitioned over
-    // --stella-motion-fast, and a single read right after focus catches
-    // the ring still interpolating away from transparent.
     await expect
-      .poll(async () => (await readRing()).color)
-      .not.toBe(resting.color);
-
-    const focused = await readRing();
-    expect(focused.style).toBe('solid');
-    expect(focused.width).toBe('2px');
+      .poll(async () => (await read()).border)
+      .not.toBe(resting.border);
+    expect((await read()).outlineStyle).toBe('none');
   });
 });
 
@@ -148,9 +110,6 @@ test.describe('layout', () => {
     mount,
     page,
   }) => {
-    // The point of pinning it: switching category must not resize the
-    // panel, or the window jumps and the nav column's scroll position
-    // goes with it.
     const component = await mount(<SettingsMenuFixture />);
     const root = component.locator('> *').first();
 
@@ -162,7 +121,6 @@ test.describe('layout', () => {
     expect(before).not.toBeNull();
     expect(after!.height).toBeCloseTo(before!.height, 0);
 
-    // ...and that height tracks the viewport, not the content.
     const viewport = page.viewportSize();
     expect(after!.height).toBeCloseTo(viewport!.height * 0.8, -1);
   });
