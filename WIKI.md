@@ -1,175 +1,140 @@
-# Stella-Componente Wiki
+# Stella Wiki
 
-Everything about developing Stella-Componente, using its components, and why things are built the way they are. Start here; jump to [CONTRIBUTING.md](./CONTRIBUTING.md) when you're ready to send a change.
+A direct, practical guide to actually building with Stella. If you want the philosophy behind these decisions, read the [README](./README.md#design-language) first — this doc assumes you already know what a "grade" is and just want to know what to type.
 
-## Contents
+**Contents**
 
-1. [Orientation](#orientation)
-2. [How to develop](#how-to-develop)
-3. [How to use components](#how-to-use-components)
-4. [Component structure & conventions](#component-structure--conventions)
-5. [Architecture reference](#architecture-reference)
-6. [Browser support](#browser-support)
-7. [Testing](#testing)
-8. [Known gaps](#known-gaps)
+1. [Buttons & ButtonIsland](#buttons--buttonisland)
+2. [SettingsMenu](#settingsmenu)
+3. [Every other component](#every-other-component)
+4. [Writing new components](#writing-new-components)
+5. [Overlay & notification hooks](#overlay--notification-hooks)
 
 ---
 
-## Orientation
+## Buttons & ButtonIsland
 
-Stella-Componente is two packages: `@stella-componente/terra` (the base — thin, functional, GTK 4/libadwaita-inspired) and `@stella-componente/vidrio` (an aesthetic superset of Terra — frosted glass, dynamic lighting; scaffolded, not built yet). Terra never depends on Vidrio; that direction is fixed.
+**The rule: a `Button` never renders on its own. It always goes inside a `ButtonIsland`.** `Button` has no border, background, or radius of its own — all of that comes from the `ButtonIsland` wrapping it. A bare `<Button>` outside an island will look broken, because it is.
 
-Repo layout:
+### `Button` props
 
-```
-packages/
-  terra/       @stella-componente/terra  — the package you install
-  vidrio/      @stella-componente/vidrio — depends on @stella-componente/terra via workspace:*
-  terra-test/  (not in this repo — see below)
-```
+| Prop                           | Type                                  | Default     | What it does                                                                                    |
+| ------------------------------ | ------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------- |
+| `size`                         | `'xs' \| 'sm' \| 'md' \| 'lg'`        | `'md'`      | Usually left unset — `ButtonIsland` sets this on every button it wraps.                         |
+| `grade`                        | `'global' \| 'default' \| 'elevated'` | `'default'` | Usually left unset for the same reason — the island sets it.                                    |
+| `active`                       | `boolean`                             | `false`     | Marks the button as "currently picked" (a selection row, a tab, a toggle).                      |
+| `loading`                      | `boolean`                             | `false`     | Shows a spinner in place of the icon, disables the button, sets `aria-busy`.                    |
+| `leadingIcon` / `trailingIcon` | `ReactNode`                           | —           | Icon before/after the label.                                                                    |
+| `iconOnly`                     | `boolean`                             | `false`     | Renders as a square icon button. Uses `children` or `leadingIcon` as the icon, hides any label. |
 
-`terra-test` is the Vite + React showcase used for day-to-day component work. It lives in a **separate repository** and is gitignored here, so a fresh clone of this repo won't have it and `pnpm dev` will find nothing to run. The pnpm workspace globs `packages/*`, so dropping it back in at that path is all it takes to restore the dev loop — no config change needed.
+Plus every normal `<button>` attribute — `onClick`, `disabled`, `type`, `aria-label`, etc.
 
-Every component follows atomic design: `src/atoms/`, `src/molecules/`, `src/organisms/`, `src/layout/`, plus `src/providers/` and `src/theme/` for app-level systems.
+### `ButtonIsland` props
 
-## How to develop
+| Prop          | Type                                  | Default        | What it does                                                                                                    |
+| ------------- | ------------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------- |
+| `size`        | `'xs' \| 'sm' \| 'md' \| 'lg'`        | `'md'`         | Cascades to every `Button` child automatically — you don't set size on the buttons themselves.                  |
+| `grade`       | `'global' \| 'default' \| 'elevated'` | auto-resolved  | Cascades to every `Button` child. Leave it unset and it escalates one step above wherever the island is nested. |
+| `orientation` | `'horizontal' \| 'vertical'`          | `'horizontal'` | `'vertical'` turns the island into a sidebar-style stack instead of a toolbar row.                              |
+| `floating`    | `boolean`                             | `false`        | A lighter visual treatment used for menus/popovers/dialog headers — you rarely need this yourself.              |
 
-**Prerequisites:** Node ≥ 20.19 (Vite 8's floor), pnpm 11.
+`ButtonIsland` also accepts `FlexContainer` layout props (`gap`, `align`, `justify`, `wrap`) since it lays its children out in one internally.
 
-```bash
-pnpm install
-pnpm dev   # runs terra-test, if you have it — see Orientation
-```
+### Structure
 
-Terra's `src/` is consumed directly by `terra-test` through the pnpm workspace, so editing a component hot-reloads immediately — no build step in the loop. `pnpm dev` is where you'll do almost all component work, _when the showcase is present_; on a bare clone of this repo it's a no-op and the tests are your feedback loop instead.
+A `ButtonIsland` is an `Island` (pill or panel, depending on orientation) wrapping a `FlexContainer` of your children. Only `Button` children are touched — their `size`/`grade` get overwritten to match the island's; anything else passes through untouched. The hairline that appears between two adjacent buttons is pure CSS (a shared-border trick using `:has()`) — you never add it yourself.
 
-This works because `@stella-componente/terra`'s `exports` point at `./src/index.ts`, and `publishConfig` overrides them to `./dist/` — pnpm swaps the two at publish time, so workspace consumers get live source and published consumers get compiled output, with no build step in between and no `dist/` needing to exist locally. (It previously pointed only at `dist/`, which meant `pnpm dev` failed with _"Failed to resolve entry for package @stella-componente/terra"_ on a clean checkout, since `dist/` is gitignored and never built in the dev loop.)
+For an **explicit break** between two logical clusters inside one island, drop a plain `<Divider />` between them. The island's CSS recognizes it and adjusts the spacing/borders around it on both sides — you don't need anything fancier than that.
 
-**Build** (only needed to actually publish — not part of the dev loop):
+### Examples
 
-```bash
-pnpm --filter @stella-componente/terra build
-```
-
-Terra builds unbundled: `tsc` compiles `src/` to `dist/` 1:1 (declarations included, `inlineSources: true` + `removeComments: true` — the published `dist/*.js` is comment-free but each `.js.map` embeds the original `src/` text so debugging lands in the real source without shipping `src/`), then `scripts/copy-css.mjs` copies every `*.css`/`*.module.css` alongside its compiled `.js` twin while stripping `/* … */` comments (tokens.css alone is ~59% comments), since `tsc` only touches TypeScript. No bundler in the middle — the consuming app's own bundler (Vite, webpack, Next, a Tauri frontend) resolves the CSS Modules imports from `dist/`, the same way it already resolves them from any other package. This keeps Terra genuinely thin (zero build-tool dependency shipped or required beyond `tsc`) and gives perfect tree-shaking for free, since there's no bundler decision-making step to get in the way of dead-code elimination.
-
-The tradeoff: `dist/` output uses extensionless relative imports (`from '../atoms/Button'`), which needs a bundler to resolve — running the built output under plain Node ESM directly won't work. Every realistic Stella-Componente consumer (Vite, webpack, Next, Tauri) already has one, so this hasn't been a real constraint. `declarationMap` has no `inlineSources` equivalent, so "go to definition" on a published install lands on the `.d.ts` signature (still fully typed with JSDoc) rather than the commented implementation — runtime debugging via `.js.map` is unaffected.
-
-**Typecheck:**
-
-```bash
-pnpm typecheck   # runs tsc in every package
-```
-
-Terra has two TS configs, and the split matters: `tsconfig.json` is the **build** config (emits `dist/`, excludes `*.test.*`/`*.ct.tsx` so tests never ship), while `tsconfig.typecheck.json` is the **check** config (`noEmit`, and additionally covers the test files, `playwright/`, and the config files themselves). `pnpm typecheck` runs the second. Without the split, `pnpm build` would emit compiled test files into `dist/` and fail on `playwright/a11y.ts` sitting outside `rootDir`.
-
-**Format:**
-
-```bash
-pnpm format         # writes
-pnpm format:check   # CI-style check, no writes
-```
-
-Prettier config: tabs + double quotes everywhere, **except** `*.{ts,tsx}` which override to spaces + single quotes (see `.prettierrc`). If a `.tsx` file looks tab-indented with double quotes, it predates that override and is due a reformat, not a new convention to match.
-
-**Test:** see [Testing](#testing) below.
-
-**Publish checklist** (manual, no Changesets).
-
-Only `@stella-componente/terra` publishes. `@stella-componente/vidrio` keeps `private: true` until it has an actual component — publishing an empty package would just squat the name.
-
-**One-time setup**
-
-1. The `@stella-componente` scope has to belong to you before npm will accept the package — it maps to an npm org of that name, created once and free for public packages. The shorter `@stella` was taken (registered years ago, nothing published under it), which is why the scope reads the way it does; npm does not release squatted scopes, so the only options were a different scope or a dispute nobody wants to file.
-2. `npm login`, or put a granular automation token in `~/.npmrc`. Never commit either — there is no `.npmrc` in this repo on purpose.
-3. Enable 2FA on the npm account. For a package other people install, this is the difference between a leaked token being an inconvenience and being a supply-chain incident.
-
-**Each release**
-
-1. Bump `version` in `packages/terra/package.json`. Semver: patch for fixes, minor for new components/props, major for breaking API/behaviour changes. Pre-1.0, minor can carry breaking changes too (standard semver-0.x reading). Prereleases use `-alpha.N` / `-beta.N`.
-2. Move the relevant entries out of `[Unreleased]` in the root `CHANGELOG.md` under a new version heading.
-3. Verify locally: `pnpm typecheck && pnpm test && pnpm --filter @stella-componente/terra test:ct`. `prepublishOnly` re-runs clean/typecheck/test/build during publish anyway, so a broken tree can't ship — but the component tests aren't in that hook (they need a browser), so run them yourself.
-4. `pnpm --filter @stella-componente/terra publish --tag alpha --access public --dry-run` and **read the file list**. It should be `dist/**`, `package.json`, `README.md`, `LICENSE` and nothing else. Source, tests and configs must not appear.
-5. Drop `--dry-run` to publish for real.
-6. `git tag v0.1.0-alpha.0 && git push --tags`.
-
-**Why `--tag alpha` matters.** Without it npm sets the `latest` dist-tag, so `npm install @stella-componente/terra` gives everyone a prerelease. With it, `latest` stays unset until a stable release and installing the alpha is opt-in via `@stella-componente/terra@alpha`. Getting this wrong on the first publish is awkward to undo — `latest` can be repointed, but anyone who installed in between already has it pinned.
-
-**What `publishConfig` does for you.** The package points `main`/`types`/`exports` at `./src` so the workspace consumes TypeScript source directly; `publishConfig` overrides all of them to `./dist` at publish time. pnpm performs the swap — nothing in `package.json` needs hand-editing at release, and there is no state to remember to revert afterwards.
-
-**Unpublishing barely exists.** npm only allows it within 72 hours and only if nothing depends on the package; after that the version is permanent. `npm deprecate` is the realistic remedy. This is the reason for the dry-run step.
-
-## How to use components
-
-```bash
-pnpm add @stella-componente/terra@alpha
-```
-
-The `alpha` tag is required while the package is pre-1.0 — `latest` is deliberately unset, so a bare `pnpm add @stella-componente/terra` will not resolve.
-
-Import the design tokens once, at your app's entry point — everything else in Terra reads these as CSS custom properties, nothing works visually without them:
+A basic toolbar:
 
 ```tsx
-import "@stella-componente/terra/styles/tokens.css";
-```
-
-Wrap your app root in the providers you need — none are required for a component to render, but `ThemeProvider` is needed for runtime theme switching, `OverlayProvider` for `Dialog`/`Menu`/`Popover`, `NotificationProvider` for toasts:
-
-```tsx
-import {
-	ThemeProvider,
-	OverlayProvider,
-	NotificationProvider,
-} from "@stella-componente/terra";
-
-function Root() {
-	return (
-		<ThemeProvider>
-			<OverlayProvider>
-				<NotificationProvider>
-					<App />
-				</NotificationProvider>
-			</OverlayProvider>
-		</ThemeProvider>
-	);
-}
-```
-
-Then use components directly:
-
-```tsx
-import { ButtonIsland, Button } from "@stella-componente/terra";
-
-<ButtonIsland size="sm">
+<ButtonIsland>
+	<Button leadingIcon={<SaveIcon />}>Save</Button>
 	<Button>Cancel</Button>
-	<Button active>Save</Button>
-</ButtonIsland>;
+</ButtonIsland>
 ```
 
-**Worked example — `SettingsMenu`** (data-driven, schema in, changes out — it owns no state of its own beyond which category is selected):
+An icon-only action cluster:
 
 ```tsx
-import { useState } from "react";
-import {
-	SettingsMenu,
-	type SettingsSchema,
-	type SettingsValues,
-} from "@stella-componente/terra";
+<ButtonIsland size="sm">
+	<Button iconOnly aria-label="Bold">
+		<BoldIcon />
+	</Button>
+	<Button iconOnly aria-label="Italic">
+		<ItalicIcon />
+	</Button>
+</ButtonIsland>
+```
+
+A selection row (segmented control) — `active` does the highlighting, you do the state:
+
+```tsx
+<ButtonIsland>
+	<Button active={view === "grid"} onClick={() => setView("grid")}>
+		Grid
+	</Button>
+	<Button active={view === "list"} onClick={() => setView("list")}>
+		List
+	</Button>
+</ButtonIsland>
+```
+
+A vertical sidebar, with an explicit break before "Sign out":
+
+```tsx
+<ButtonIsland orientation="vertical" size="lg">
+	<Button leadingIcon={<HomeIcon />}>Home</Button>
+	<Button leadingIcon={<SettingsIcon />}>Settings</Button>
+	<Divider />
+	<Button leadingIcon={<LogOutIcon />}>Sign out</Button>
+</ButtonIsland>
+```
+
+A context menu, a segmented switcher, an icon toolbar in a title bar — they're all this same pairing. `Menu` is literally built out of `ButtonIsland` + `Button` internally; you're using the same primitive it uses.
+
+---
+
+## SettingsMenu
+
+`SettingsMenu` itself doesn't manage being open or closed — it's just a nav-plus-fields panel. To make it dismissable, put it inside a `Dialog` yourself.
+
+### 1. Build a schema
+
+A schema is a list of categories, each with a list of fields. Three field types: `text`, `boolean`, `choice`.
+
+```tsx
+import type { SettingsSchema } from "@stella-componente/terra";
 
 const schema: SettingsSchema = {
 	categories: [
 		{
 			id: "general",
 			label: "General",
+			icon: <GearIcon />,
 			fields: [
-				{ key: "displayName", type: "text", label: "Display name" },
-				{ key: "autoSave", type: "boolean", label: "Auto-save" },
+				{
+					key: "displayName",
+					type: "text",
+					label: "Display name",
+					placeholder: "Jane Doe",
+				},
+				{
+					key: "autoSave",
+					type: "boolean",
+					label: "Auto-save",
+					description: "Save changes as you type",
+				},
 				{
 					key: "startupView",
 					type: "choice",
 					label: "Startup view",
+					control: "segmented", // or 'radio'
 					options: [
-						{ value: "dashboard", label: "Dashboard" },
+						{ value: "home", label: "Home" },
 						{ value: "last", label: "Last opened" },
 					],
 				},
@@ -177,177 +142,525 @@ const schema: SettingsSchema = {
 		},
 	],
 };
+```
 
-function Settings() {
-	const [values, setValues] = useState<SettingsValues>({
-		general: { displayName: "Jane", autoSave: true, startupView: "dashboard" },
-	});
+### 2. Track values, handle changes
 
+`values` is `{ [categoryId]: { [fieldKey]: value } }`. `onChange` fires with `(categoryId, fieldKey, value)`.
+
+```tsx
+const [generalValues, setGeneralValues] = useState({
+	displayName: "",
+	autoSave: true,
+	startupView: "home",
+});
+
+const handleChange = (
+	categoryId: string,
+	key: string,
+	value: string | boolean
+) => {
+	setGeneralValues((prev) => ({ ...prev, [key]: value }));
+};
+```
+
+### 3. Add the built-in Appearance category (optional)
+
+Stella ships a ready-made "Appearance" category wired straight to `ThemeManager`. It plugs into the same schema/values/onChange plumbing as your own categories — the twist is that its values come from live theme state, not your own component state.
+
+```tsx
+import {
+	appearanceSettingsCategory,
+	getAppearanceValues,
+	applyAppearanceChange,
+	useTheme,
+} from "@stella-componente/terra";
+
+const theme = useTheme();
+
+const schema: SettingsSchema = {
+	categories: [generalCategory, appearanceSettingsCategory],
+};
+
+const values = {
+	general: generalValues,
+	appearance: getAppearanceValues(theme.config),
+};
+
+const handleChange = (
+	categoryId: string,
+	key: string,
+	value: string | boolean
+) => {
+	if (categoryId === "appearance") {
+		applyAppearanceChange(theme, key, value);
+		return;
+	}
+	setGeneralValues((prev) => ({ ...prev, [key]: value }));
+};
+```
+
+### 4. Make it dismissable with `Dialog`
+
+`Dialog.Header` adds its own close button automatically as soon as you pass `onClose` to `Dialog` — you don't add one yourself.
+
+```tsx
+const [open, setOpen] = useState(false);
+
+<Dialog open={open} onClose={() => setOpen(false)} size="lg">
+	<Dialog.Header>
+		<Dialog.Title>Settings</Dialog.Title>
+	</Dialog.Header>
+	<Dialog.Body>
+		<SettingsMenu schema={schema} values={values} onChange={handleChange} />
+	</Dialog.Body>
+</Dialog>;
+```
+
+That's the whole pattern: schema describes the fields, `values`/`onChange` is a plain controlled-component loop, and `Dialog` is what makes the whole thing dismissable.
+
+---
+
+## Every other component
+
+Short reference for everything not covered above. One snippet, one or two sentences, next.
+
+### Atoms
+
+**Avatar** — circular image with an initials or icon fallback.
+
+```tsx
+<Avatar src={user.photoUrl} initials="JD" size="md" />
+```
+
+**Badge** — a small, non-interactive status label.
+
+```tsx
+<Badge color="success" variant="tinted">
+	Active
+</Badge>
+```
+
+**Checkbox** — native checkbox, with an `indeterminate` state.
+
+```tsx
+<Checkbox
+	label="Remember me"
+	checked={remember}
+	onChange={(e) => setRemember(e.target.checked)}
+/>
+```
+
+**Code** — inline code with click-to-copy. Needs a `NotificationProvider` ancestor for the copy toast.
+
+```tsx
+<Code>pnpm install</Code>
+```
+
+**Divider** — a separator line, horizontal or vertical.
+
+```tsx
+<Divider orientation="vertical" />
+```
+
+**Icon** — sizes and colors whatever icon element you hand it.
+
+```tsx
+<Icon size="lg">
+	<MyIcon />
+</Icon>
+```
+
+**Input** — text field, with optional label, icons, and error state.
+
+```tsx
+<Input label="Email" leadingIcon={<MailIcon />} error={hasError} />
+```
+
+**Island** — the base surface. Nearly everything else is built on it.
+
+```tsx
+<Island shape="panel" grade="elevated" padding="4">
+	…
+</Island>
+```
+
+**Kbd** — inline keyboard-shortcut label.
+
+```tsx
+<Kbd>⌘K</Kbd>
+```
+
+**Link** — anchor wrapper; `external` sets `target`/`rel` safely.
+
+```tsx
+<Link href="https://example.com" external>
+	Docs
+</Link>
+```
+
+**Progress** — a determinate progress bar.
+
+```tsx
+<Progress value={40} max={100} />
+```
+
+**Radio** — native radio input; normally used inside `RadioGroup`.
+
+```tsx
+<Radio name="plan" value="pro" label="Pro" />
+```
+
+**Skeleton** — a shimmering loading placeholder.
+
+```tsx
+<Skeleton variant="circular" width={40} height={40} />
+```
+
+**Slider** — a range input with a live, editable value readout.
+
+```tsx
+<Slider label="Volume" value={volume} onValueChange={setVolume} showValue />
+```
+
+**Spinner** — indeterminate loading indicator.
+
+```tsx
+<Spinner size="sm" />
+```
+
+**Switch** — a GTK-style toggle.
+
+```tsx
+<Switch checked={notify} onCheckedChange={setNotify} label="Notifications" />
+```
+
+**Text** — the typography primitive. Everything that renders text should go through this.
+
+```tsx
+<Text variant="title-2" as="h2">
+	Heading
+</Text>
+```
+
+**Textarea** — native textarea with optional auto-grow.
+
+```tsx
+<Textarea label="Notes" autoGrow maxRows={6} />
+```
+
+### Layout
+
+**FlexContainer** — the one-dimensional layout primitive everything composes with.
+
+```tsx
+<FlexContainer direction="column" gap="4" align="stretch">
+	…
+</FlexContainer>
+```
+
+**ScrollArea** — a styled scroll container, with an option to hide the scrollbar chrome.
+
+```tsx
+<ScrollArea axis="vertical" grow padding="4">
+	…
+</ScrollArea>
+```
+
+### Molecules
+
+**Alert** — an inline status banner, optionally dismissible.
+
+```tsx
+<Alert variant="warning" title="Heads up" onDismiss={() => setShow(false)}>
+	Your session expires soon.
+</Alert>
+```
+
+**Breadcrumbs** — a nav trail; the last item is marked current automatically.
+
+```tsx
+<Breadcrumbs>
+	<Breadcrumbs.Item href="/">Home</Breadcrumbs.Item>
+	<Breadcrumbs.Item href="/settings">Settings</Breadcrumbs.Item>
+	<Breadcrumbs.Item>Profile</Breadcrumbs.Item>
+</Breadcrumbs>
+```
+
+**Card** — an `Island`-based content box with `Header`/`Title`/`Description`/`Body`/`Footer`. Pass `nested` so a card inside a card auto-escalates its grade.
+
+```tsx
+<Card>
+	<Card.Header>
+		<Card.Title>Plan</Card.Title>
+	</Card.Header>
+	<Card.Body>You're on the Pro plan.</Card.Body>
+</Card>
+```
+
+**CheckboxGroup** — a fieldset of checkboxes sharing one value array.
+
+```tsx
+<CheckboxGroup
+	legend="Notify me about"
+	value={topics}
+	onValueChange={setTopics}
+>
+	<Checkbox value="billing" label="Billing" />
+	<Checkbox value="security" label="Security" />
+</CheckboxGroup>
+```
+
+**Field** — wraps one form control with a hint or error message.
+
+```tsx
+<Field hint="We'll never share this" error={emailError}>
+	<Input label="Email" />
+</Field>
+```
+
+**Notification** — the toast card. You'll almost always reach for `useNotifications()` instead of rendering this directly — see [Overlay & notification hooks](#overlay--notification-hooks).
+
+**RadioGroup** — a fieldset of radios sharing one value.
+
+```tsx
+<RadioGroup legend="Plan" value={plan} onValueChange={setPlan}>
+	<Radio value="free" label="Free" />
+	<Radio value="pro" label="Pro" />
+</RadioGroup>
+```
+
+**SearchField** — an `Input` preset with a search icon, clear button, and loading state.
+
+```tsx
+<SearchField
+	placeholder="Search…"
+	onValueChange={setQuery}
+	loading={isSearching}
+/>
+```
+
+**Select** — a custom dropdown built on `Menu`, for when native `<select>` styling isn't enough.
+
+```tsx
+<Select label="Country" value={country} onValueChange={setCountry}>
+	<Select.Option value="us">United States</Select.Option>
+	<Select.Option value="ca">Canada</Select.Option>
+</Select>
+```
+
+**Tooltip** — wraps exactly one child element and labels it on hover/focus.
+
+```tsx
+<Tooltip label="Save">
+	<Button iconOnly aria-label="Save">
+		<SaveIcon />
+	</Button>
+</Tooltip>
+```
+
+**WindowControls** — minimize/maximize/close cluster for a custom title bar.
+
+```tsx
+<WindowControls controls={{ minimize, maximize, close, maximized }} />
+```
+
+### Organisms
+
+**Dialog** — modal, compound, focus-trapped.
+
+```tsx
+<Dialog open={open} onClose={() => setOpen(false)}>
+	<Dialog.Header>
+		<Dialog.Title>Delete item?</Dialog.Title>
+	</Dialog.Header>
+	<Dialog.Body>This can't be undone.</Dialog.Body>
+	<Dialog.Footer>
+		<ButtonIsland>
+			<Button onClick={() => setOpen(false)}>Cancel</Button>
+			<Button onClick={confirmDelete}>Delete</Button>
+		</ButtonIsland>
+	</Dialog.Footer>
+</Dialog>
+```
+
+**EmptyState** — a centered placeholder for an empty list or view.
+
+```tsx
+<EmptyState
+	icon={<InboxIcon />}
+	title="No messages"
+	description="You're all caught up."
+>
+	<Button>Refresh</Button>
+</EmptyState>
+```
+
+**List** — a keyboard-navigable, single-select list.
+
+```tsx
+<List value={selected} onValueChange={setSelected}>
+	<List.Item value="a">Item A</List.Item>
+	<List.Item value="b">Item B</List.Item>
+</List>
+```
+
+**Menu** — an anchored dropdown or context menu. It needs a real DOM element to anchor to — a state-based ref callback is the safe way to get one (see the note in [Overlay & notification hooks](#overlay--notification-hooks) about why not a plain `useRef`).
+
+```tsx
+const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+const [open, setOpen] = useState(false);
+
+<Button ref={setAnchorEl} onClick={() => setOpen(true)}>Options</Button>
+<Menu open={open} onClose={() => setOpen(false)} anchor={anchorEl}>
+	<Menu.Item onSelect={rename}>Rename</Menu.Item>
+	<Menu.Item onSelect={duplicate}>Duplicate</Menu.Item>
+	<Menu.Separator />
+	<Menu.Item destructive onSelect={remove}>Delete</Menu.Item>
+</Menu>
+```
+
+**Popover** — anchored floating content, same anchoring mechanics as `Menu`, no menu semantics.
+
+```tsx
+<Popover open={open} onClose={() => setOpen(false)} anchor={anchorEl}>
+	<Text>Any content you want.</Text>
+</Popover>
+```
+
+**WindowChrome** — a runtime-agnostic custom title bar.
+
+```tsx
+<WindowChrome
+	icon={<AppIcon />}
+	title="My App"
+	tools={
+		<Button iconOnly aria-label="Search">
+			<SearchIcon />
+		</Button>
+	}
+	windowControls={{ minimize, maximize, close, maximized }}
+/>
+```
+
+---
+
+## Writing new components
+
+Stella's set won't cover everything. Adding your own is meant to be easy — you're using the same building blocks Stella's own components use.
+
+**1. File shape.** Same as every Stella component:
+
+```
+Component/
+├─ Component.tsx
+├─ Component.module.css
+└─ index.ts
+```
+
+**2. Load the tokens once.** As long as `@stella-componente/terra/styles/tokens.css` is imported somewhere at your app's entry (same as any Stella consumer), every `--stella-*` custom property is available in your own `.module.css` files.
+
+**3. Sizing.** Use the same five-step scale everything else uses — don't invent your own pixel values.
+
+```css
+.sm {
+	min-height: var(--stella-size-sm);
+}
+.md {
+	min-height: var(--stella-size-md);
+}
+```
+
+`--stella-size-xs` (24px) → `--stella-size-xl` (52px).
+
+**4. Grade.** Set `data-stella-grade="global" | "default" | "elevated"` on your root element to opt into the nesting system. Inside your CSS, read colors through the _grade-indirected_ tokens — `var(--stella-g-surface-0)`, `var(--stella-g-border-0)`, and so on — never the raw numbered scale (`--stella-surface-3`, `--stella-border-5`) directly. The indirected tokens are what remap automatically depending on the active `data-stella-grade`, which is the entire mechanism that makes elevation "just work" without your component needing to know what it's nested inside.
+
+```tsx
+function MyPanel({
+	grade = "default",
+	children,
+}: {
+	grade?: Grade;
+	children?: React.ReactNode;
+}) {
 	return (
-		<SettingsMenu
-			schema={schema}
-			values={values}
-			onChange={(categoryId, key, value) =>
-				setValues((prev) => ({
-					...prev,
-					[categoryId]: { ...prev[categoryId], [key]: value },
-				}))
-			}
-		/>
+		<div data-stella-grade={grade} className={styles.panel}>
+			{children}
+		</div>
 	);
 }
 ```
 
-For the full component list and prop reference, generated API docs are the source of truth (TypeDoc — see [Testing/Docs](#how-to-develop)); this wiki covers usage patterns and reasoning, not a live prop table that would drift out of sync.
-
-## Component structure & conventions
-
-**Per-component file layout**, one folder per component under its atomic-design tier:
-
-```
-atoms/Button/
-  Button.tsx
-  Button.module.css
-  index.ts        — barrel: export { Button, type ButtonProps, ... } from './Button';
-```
-
-`index.ts` only ever re-exports; it never contains logic. `src/index.ts` at the package root re-exports every component's barrel — that single file is Terra's entire public surface.
-
-**When a component outgrows one file**, split by sub-component, not by concern (no generic `utils.ts`/`helpers.ts` dumping ground). `SettingsMenu` is the reference example:
-
-```
-organisms/SettingsMenu/
-  SettingsMenu.tsx           — root: composition + controlled/uncontrolled state
-  SettingsCategoryPanel.tsx  — internal: right-hand pane
-  SettingsNav.tsx            — internal: left-hand category list
-  fields/
-    SettingsFieldRow.tsx     — internal: dispatches on field.type
-    BooleanField.tsx
-    ChoiceField.tsx
-    TextField.tsx
-  types.ts                   — schema types (SettingsSchema, SettingsField, ...)
-  index.ts                   — still only exports SettingsMenu + its public types
-```
-
-Only the root component (`SettingsMenu`) is exported from the barrel. Everything else is `// internal — decomposition detail, not a new atom` in its own docblock, so nobody mistakes an internal split for a new part of the public API. Split when a file mixes more than one real responsibility (nav vs. panel vs. per-field-type rendering) or crosses roughly 150–200 lines of actual logic — not on a fixed line count alone.
-
-**Compound vs. prop-driven APIs:** complex organisms use compound components (`<Dialog><Dialog.Header>…`), simple atoms stay prop-driven (`<Button variant="…">`). If a component has 2+ structurally distinct regions a consumer composes (header/body/footer), reach for compound; if it's one control with variations, reach for props.
-
-**CSS:** CSS Modules only, zero runtime CSS-in-JS. Cross-file sharing uses `composes: x from './file.module.css'` (see `styles/shared/formControl.module.css`, `styles/shared/controlIcon.module.css`) rather than duplicating declarations. All theming is CSS custom properties (`tokens.css`) — never JS-computed inline styles for anything that varies by theme, so an accent/density/radius change never forces a React re-render.
-
-**Accessibility:** native HTML element first (`<input type="checkbox">`, real `<button>`) — custom ARIA wiring (`role="switch"`, roving tabindex) only when no native element matches, and even then keyboard behavior and focus management are non-optional, not an opt-in prop. `:focus-visible` gets a real ring on every interactive component; see the inset-ring pattern in [Architecture reference](#architecture-reference).
-
-**Icons:** Terra ships no icon set. Symbolic UI glyphs it does need internally (window controls, dialog close, plus `Palette`/`Sun`/`Moon`/`Monitor` for the pre-built `appearanceSettingsCategory`) live in `utils/icons.tsx`, one file, no duplication — check there before inlining a new SVG.
-
-## Architecture reference
-
-Deeper design reasoning that used to live as long inline comments scattered across individual component files — relocated here so it's in one searchable place instead of duplicated/drifting per file. Source comments now point back to the relevant section here instead of re-explaining it.
-
-### Design tokens & theming
-
-`ThemeManager` (framework-agnostic) writes CSS custom properties to the document root; `ThemeProvider`/`useTheme` is the React binding. Five independent axes, each backed by a scale token multiplier so changing one updates every component reading it with no re-render:
-
-| Axis         | Token                                      | Values                                |
-| ------------ | ------------------------------------------ | ------------------------------------- |
-| Color scheme | native `light-dark()`                      | `light` / `dark` / `system`           |
-| Radius       | `--stella-radius-scale`                    | `sharp` / `default` / `round`         |
-| Density      | `--stella-space-scale`                     | `compact` / `default` / `comfortable` |
-| Border width | `--stella-border-width`                    | `none` / `thin` / `default` / `thick` |
-| Motion       | `data-stella-motion` + `--stella-motion-*` | `system` / `reduced` / `off`          |
-
-**Single radius token model:** every component reads `--stella-radius-panel` for its rounding — there is no per-component radius scale. This was a deliberate consolidation (there used to be `-xs/-sm/-lg/-full/-pill` variants); one token that everything shares means changing the kit's overall "roundedness" is a single edit, and every surface stays visually consistent with every other one at any radius setting.
-
-**State layers** (`--stella-state-hover` / `-active` / `-selected`) are a 3-step escalation ladder used as _background overlays_ over whatever surface tone happens to be underneath (card, muted island, toolbar) — this is deliberate: a fixed opaque hover color previously baked in an assumption about what sat underneath it (`--stella-surface-hover` once equalled `--stella-surface-muted`, so hovering anything on a muted surface was invisible). The three steps mirror a hover → active → selected ladder where each is a clear step firmer than the last.
-
-This ladder is reused as a _border-color_ escalation too (see Button/ButtonIsland below) — which surfaced a real bug worth recording: `--stella-state-hover` and `--stella-border-default` briefly resolved to the exact same raw neutral step, so anything using state-hover as a border-color escalation above border-default was changing color "to" the color it already rested at — invisible. Fixed by giving `--stella-state-hover` its own step (`neutral-300`/`600`) distinct from `--stella-border-default` (`neutral-200`/`700`) and below `--stella-state-active` (`neutral-400`/`500`). The lesson: a token being visually correct in one context (background wash over a surface) doesn't guarantee it's correct in another (border-color over a border-default resting state) — check the actual resting value it's escalating _from_, not just the token name.
-
-### Island — the structural primitive
-
-`Island` is the one container every surface in Stella-Componente builds on: a bordered, elevated box (`panel` shape, block-level, fills its container) or a content-hugging pill (`pill` shape, `ButtonIsland`/toolbar clusters). Both shapes share the same radius token — shape is a layout distinction, not a rounding one. `ButtonIsland`, `Dialog`, `Menu`'s panel, `Notification` are all an `Island` underneath.
-
-### Button / ButtonIsland — the border model
-
-`Button` carries **no border property at all**, and no radius, and no surface of its own — all three come from the wrapping `ButtonIsland`/`Island`. This is deliberate, not an oversight: a bare `Button` outside an `Island` is square and borderless on purpose, a signal to wrap it rather than a bug.
-
-The hairline between adjacent buttons in a `ButtonIsland` is a **real `Divider` element**, auto-inserted between every consecutive `Button` pair by `ButtonIsland.tsx` — not a border trick. (An earlier version used a reserved transparent `border-left` on `Button` colored in via a sibling selector; this was replaced because "buttons shouldn't have borders, Islands do" — border/separator ownership belongs to the container, not the control.) An explicit `ButtonIsland.Separator` already sitting between two buttons is left alone — no second one gets auto-inserted next to it.
-
-Both the auto-inserted hairline and the outer `Island`'s own border react to a hovered/pressed `Button` child via CSS `:has()` — no JS state needed to coordinate a child's interaction with its parent's styling:
-
 ```css
-.root:has(.group > button:hover:not(:disabled)) {
-	border-color: var(--stella-state-hover);
-}
-.root:has(.group > button:active:not(:disabled)) {
-	border-color: var(--stella-state-active);
+.panel {
+	background: var(--stella-g-surface-0);
+	border: 1px solid var(--stella-g-border-0);
 }
 ```
 
-`Menu` mirrors this exact pattern for its own items: no border on `.item`, a real auto-inserted `Divider` between adjacent `Menu.Item`s (dimmed one shade via a scoped `.autoSeparator` class since it's a row boundary, not a group break — an explicit `Menu.Separator` stays at the louder default), same `:has()` escalation.
+If you want a nested instance to auto-escalate one grade above its parent (the way `Island` and `Card` do), resolve it yourself rather than hardcoding a value — accept an optional `parentGrade` prop and fall back to it when `grade` isn't explicitly set.
 
-### Focus rings
+**5. Stamp a component hook.** Terra's own components set `data-stella-component="button"`-style attributes on their root node. It costs nothing and gives you (or anyone debugging later) a reliable hook for style overrides or end-to-end tests that doesn't depend on class names surviving a refactor.
 
-Inset rings (`outline-offset: -2px`), not outset, on any control that lives inside a `clip`-on `Island` — an outset ring would be clipped by the wrapping pill's `overflow: hidden` and effectively invisible. `Checkbox`/`Radio`/`Switch` (never inside a clipping Island) use outset rings instead.
+**6. Follow the design language.** No bare buttons outside `ButtonIsland`, no more than three grades deep, controls separated from data via islands. See the [README's Design Language section](./README.md#design-language) if you haven't already.
 
-## Browser support
+---
 
-Terra targets **Baseline 2024**: Chrome 123+, Edge 123+, Safari 17.5+, Firefox 120+, and WebKitGTK 2.44+. That floor is not arbitrary — it's set by the specific modern CSS the kit leans on rather than by a support policy picked in advance:
+## Overlay & notification hooks
 
-| Feature            | Used for                                                                                                          | Consequence if unsupported                                            |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| `light-dark()`     | Every theme-dependent token is declared once instead of duplicated across a media query and an attribute selector | Colours fall back to the unresolved declaration — the theme collapses |
-| `:has()`           | `ButtonIsland`'s separator and Island border reacting to a hovered/pressed child with no JS                       | Interaction states stop escalating; everything still renders          |
-| `color-scheme`     | Native scrollbars, selection, caret and form chrome following the theme                                           | Dark app with light native chrome                                     |
-| `scrollbar-gutter` | `SettingsMenu`'s columns reserving their scrollbar gutter                                                         | Content reflows when a scrollbar appears                              |
+Stella's overlay-type components (`Dialog`, `Menu`, `Popover`, `Tooltip`) all share the same two pieces of infrastructure instead of each reinventing stacking and dismissal.
 
-For desktop hosts this floor is easier than it looks: Tauri on macOS and Electron everywhere ship a modern engine you don't choose. The one to watch is **Tauri on Linux**, which uses the system WebKitGTK — an older distro can land below 2.44.
+### `OverlayProvider` / `useOverlayLayer`
 
-Two host-specific integrations are worth knowing about, both in `WindowChrome`:
+Wrap your app once:
 
-- **Dragging** is declared twice, unconditionally — `data-tauri-drag-region` for Tauri and `-webkit-app-region: drag` for Electron — because Terra is runtime-agnostic and can't know which shell wraps it. Electron additionally needs every interactive child marked `no-drag` or the buttons swallow their own clicks; that's handled for you.
-- **Window controls** are neutral by design, with no red close button, because colour in Stella-Componente means status and nothing else.
+```tsx
+<OverlayProvider>
+	<App />
+</OverlayProvider>
+```
 
-## Testing
+`OverlayProvider` creates one shared portal root and tracks which open overlay is topmost. `useOverlayLayer({ open, onClose })` is what an overlay-type component calls to register itself in that stack:
 
-Two layers, deliberately not one — jsdom (what Vitest runs against) doesn't evaluate real CSS: no `:has()`, no `light-dark()`, no real computed-style cascade. A whole class of real bug (the `--stella-state-hover`/`--stella-border-default` collision above) is invisible to a jsdom-based test no matter how thorough, because jsdom never actually paints anything.
+```tsx
+const { root, topmost } = useOverlayLayer({ open, onClose: handleClose });
+```
 
-**Vitest + Testing Library** (`pnpm --filter @stella-componente/terra test`) — logic, ARIA attributes, controlled/uncontrolled behavior, keyboard event handlers. Colocated as `Component.test.tsx` next to the component. See `Checkbox.test.tsx` and `Switch.test.tsx` for the pattern.
+- `root` — the DOM node to portal your content into.
+- `topmost` — true only for the most-recently-opened overlay. Escape closes only the topmost one, so a `Popover` opened from inside a `Dialog` doesn't also close the `Dialog` behind it.
 
-**Playwright component tests** (`pnpm --filter @stella-componente/terra test:ct`) — anything whose correctness lives in actual computed CSS: state-layer escalation, `:has()` reactions, focus ring visibility. Colocated as `Component.ct.tsx`. See `ButtonIsland.ct.tsx` — it's a direct regression test for the hover-collision bug above, asserting `getComputedStyle(...).backgroundColor` actually changes on hover rather than trusting that the CSS rule exists.
+You'll only reach for `useOverlayLayer` directly if you're building your own overlay-shaped component (Terra's `Tooltip` does exactly this). For an anchored, positioned overlay specifically (a dropdown, a popover), reach for `useDismissableOverlay` instead — it wraps `useOverlayLayer` together with `useAnchorPosition` (positioning math) and `useClickOutside` (click-away dismissal), which is what `Menu`, `Popover`, and `Select` are actually built on.
 
-**axe-core** (`@axe-core/playwright`, via the shared `checkA11y()` helper in `playwright/a11y.ts`) runs inside the Playwright layer. It complements the hand-written ARIA tests rather than replacing them — axe can't tell you that Escape closes only the topmost overlay, and the hand-written tests can't tell you the focus ring fails contrast. It's a devDependency only, so it never reaches Terra's shipped bundle. Landmark/`lang`/heading rules are disabled in the helper: components are mounted in isolation there, and those are the host application's responsibility.
+```tsx
+const { root, panelRef, style, requestClose } = useDismissableOverlay({
+	open,
+	onClose,
+	anchor: anchorEl, // an HTMLElement, not a ref object
+	placement: "bottom-start",
+});
+```
 
-### What's covered
+A quick note on `anchor`: it wants a real `HTMLElement`, not a React ref object. The reliable way to get one is a state-based ref callback (`const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)`, then `<Button ref={setAnchorEl}>`) rather than a plain `useRef().current` read during render — the latter can be `null` on the very first render before the DOM node exists.
 
-| Layer             | Files                                                                                | What they protect                                                                                                                      |
-| ----------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Pure logic        | `utils/positioning.test.ts`, `theme/ThemeManager.test.ts`                            | The anchored-positioning geometry (flip, cross-axis shift, alignment) and the four independent theme axes. No DOM, no React, no flake. |
-| Overlay behaviour | `OverlayProvider.test.tsx`, `Dialog.test.tsx`, `Menu.test.tsx`                       | Escape scoping across stacked layers, Dialog's focus trap and focus restore, Menu's full WAI-ARIA keyboard contract.                   |
-| State & timers    | `NotificationProvider.test.tsx`                                                      | Queue ordering, auto-dismiss timing, pause-on-hover, the `aria-live` region.                                                           |
-| Form atoms        | `Checkbox`, `Switch`, `Input`, `Radio` `.test.tsx`                                   | Controlled/uncontrolled contracts, ARIA, disabled behaviour.                                                                           |
-| Presentational    | `atoms/atoms.smoke.test.tsx`                                                         | One file of thin smoke tests for Avatar/Badge/Divider/Spinner/Text/FlexContainer/WindowControls — semantics only.                      |
-| Computed CSS      | `ButtonIsland.ct.tsx`, `Button.ct.tsx`, `SettingsMenu.ct.tsx`, `WindowChrome.ct.tsx` | The state-layer ladder resolving to distinct values, focus-ring visibility and inset, the transparent chrome strip, drag regions.      |
+### `NotificationProvider` / `useNotifications`
 
-Priority for anything new, given accessibility is non-negotiable: keyboard navigation, ARIA correctness, and controlled/uncontrolled state for every component that offers both. `Popover` and `Tooltip` are the notable remaining gaps — their positioning is covered indirectly through `positioning.test.ts`, but neither has a component test of its own yet.
+Wrap your app once (usually right alongside `OverlayProvider`):
 
-## Known gaps
+```tsx
+<NotificationProvider>
+	<App />
+</NotificationProvider>
+```
 
-Kept honest deliberately — an empty list here would mean nobody's looking, not that nothing's missing.
+Then anywhere inside it:
 
-### Coverage
+```tsx
+const notify = useNotifications();
 
-- **Component tests run in Chromium only.** `playwright-ct.config.ts` defines a single project. Everything the CT layer proves about resolved CSS — the state and border ladders, `light-dark()`, `:has()`, computed geometry — is proven in Blink and nowhere else. For a kit that claims "any webview" this is the most significant gap on the list, and WebKit is the one that matters: it's where `:has()` and `light-dark()` support is newest, and it's what Tauri uses on Linux and macOS. Adding a `webkit` project to the config is the fix.
-- **`Popover` and `Tooltip` have no tests of their own.** Their positioning math is covered by `utils/positioning.test.ts` and their overlay plumbing indirectly through `Menu`, but nothing exercises their own open/close/anchor behaviour.
-- **No coverage thresholds in CI.** The suite is real, but nothing stops it from silently getting thinner.
-- **`@stella-componente/vidrio` is an empty scaffold** — directories and a `workspace:*` dependency on Terra, no components.
+notify.success("Saved.");
+notify.error("Something went wrong.", { duration: 8000 });
+const id = notify.info("Uploading…", { duration: 0 }); // 0 = stays until dismissed
+notify.dismiss(id);
+```
 
-### Design debt
-
-- **`--stella-border-subtle` is identical to `--stella-border-default`.** Everything that opts into "subtle" — `Dialog`'s header/footer rules, `Menu`'s per-item hairline, `SettingsMenu`'s between-row rules — therefore draws at full strength while the CSS describes it as the faintest thing on the panel. `neutral-100/800` is the obvious step; left alone because it's a look decision, not a correctness one.
-- **`--stella-state-hover` and `--stella-state-selected` are the same value, on purpose.** A selected control is distinguished by holding its fill _at rest_, not by a third colour. This is pinned by an equality assertion in `Button.ct.tsx` so it reads as a decision rather than the collision it resembles — see the note in `tokens.css` before changing either.
-- **A fragment wrapper silently disables auto-hairlines.** `Children.toArray` doesn't descend into fragments, so `<Menu>{cond && <><Item/><Item/></>}</Menu>` renders its items fine and quietly drops the separators between them. Same applies to `ButtonIsland`. Pinned by a test in `Menu.test.tsx` so the behaviour is at least documented.
-
-### Tooling
-
-- **No ESLint config** — Prettier only, so nothing catches unused variables, exhaustive-deps violations, or accidental `any`. The hooks in `src/hooks/` already carry `eslint-disable` comments for a rule that isn't currently running.
-- **Comment condensing is partial.** The plan is for deep design reasoning to live here and source docblocks to stay terse; a good number of components still carry the long-form version inline.
-- **Nothing is published.** Both packages are `private: true`, there are no semver guarantees, and the release path is the manual checklist in [How to develop](#how-to-develop) rather than an automated one.
+Five variants: `success`, `warning`, `error`, `info`, `debug`. Each returns an id you can pass to `dismiss()` early. Toasts auto-dismiss after 5 seconds by default, pause while hovered, and announce via `aria-live="polite"`. This is also what `Code`'s click-to-copy feedback uses under the hood — it's why `Code` needs a `NotificationProvider` ancestor to work.

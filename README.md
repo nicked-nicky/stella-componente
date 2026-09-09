@@ -1,154 +1,105 @@
 # Stella-Componente
 
-[![CI](https://github.com/nicked-nicky/stella-componente/actions/workflows/ci.yml/badge.svg?branch=alpha)](https://github.com/nicked-nicky/stella-componente/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/@stella-componente/terra/alpha.svg)](https://www.npmjs.com/package/@stella-componente/terra)
-[![Status: alpha](https://img.shields.io/badge/status-alpha-orange.svg)](#project-status)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/nicked-nicky/stella-componente/ci.yml?branch=alpha&label=CI&color=22a8c3&labelColor=126b7d)](https://github.com/nicked-nicky/stella-componente/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@stella-componente/terra?label=npm&color=df3020&labelColor=8a1a0f)](https://www.npmjs.com/package/@stella-componente/terra)
+[![Status](https://img.shields.io/badge/status-alpha-e67d37?labelColor=934612)](#getting-started)
+[![License](https://img.shields.io/badge/License-MIT-237ad7?labelColor=17518f)](./LICENSE)
+[![Runtime-deps](https://img.shields.io/badge/Runtime--deps-ZERO!-90cb10?labelColor=6c990d)](./packages/terra/package.json)
 
-[![Runtime dependencies: 0](https://img.shields.io/badge/runtime%20deps-0-success.svg)](./packages/terra/package.json)
-[![React](https://img.shields.io/badge/react-18%20%7C%2019-61dafb.svg)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)](./tsconfig.base.json)
-[![Node](https://img.shields.io/badge/node-%3E%3D20.19-339933.svg)](https://nodejs.org)
+## Overview
 
-[![Tests: 204](https://img.shields.io/badge/tests-166%20unit%20%2B%2038%20component-success.svg)](./WIKI.md#testing)
-[![Accessibility: axe-core](https://img.shields.io/badge/a11y-axe--core-6f42c1.svg)](./WIKI.md#testing)
-[![Code style: Prettier](https://img.shields.io/badge/code%20style-prettier-ff69b4.svg)](./.prettierrc)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
+Stella is a **React-first** UI kit inspired by **GTK 4** and **Libadwaita**. It's under active development, meant to stay light and thin while looking genuinely good — giving desktop apps built with **Tauri** or **Electron** a native feel without tying the design system to either runtime.
 
-A React-first, runtime-agnostic UI kit with a GTK 4 / libadwaita-inspired visual identity — built for fast, native-feeling desktop apps (Tauri, Electron, or any webview), and just as usable on the web.
+Stella is runtime-agnostic and zero-dependency, and it doesn't stop at styled components: overlays, notifications, dialogs and tooltips are built in as thin, dependency-free app-level systems, not just visual atoms. The goal is for Stella to be the fastest path to a consistent, opinionated desktop UI — everywhere a webview runs.
 
-Zero runtime dependencies and zero runtime CSS-in-JS. Theming is CSS custom properties, not JS-computed styles, so changing the colour scheme, density, rounding, border weight, or motion never forces a React re-render across the tree.
+## Design Language
 
-**[WIKI.md](./WIKI.md)** — how to develop, how to use components, component structure & conventions, architecture reference, testing. **[CONTRIBUTING.md](./CONTRIBUTING.md)** — how to send a change.
+Stella is built for segmented UIs that lean heavily on **islands** as the main way to separate an interface into chunks. Three conventions fall out of that:
+
+**Separate controls from data.** Building a text editor? Push the control buttons into their own island rather than letting them float over the content. Bundle the viewport and its controls together with `FlexContainer` so the pairing is structural, not incidental.
+
+**Limited nesting depth.** Stella has three levels of nesting — called **grades** — thought through from the start:
+
+| Grade      | Depth   | Rule                                                                             |
+| ---------- | ------- | -------------------------------------------------------------------------------- |
+| `global`   | Lowest  | Any `global`-grade component must contain an element of a higher grade.          |
+| `default`  | Middle  | The everyday grade — most components sit here.                                   |
+| `elevated` | Deepest | Shouldn't contain anything with a surface of its own. This is as deep as you go. |
+
+A component doesn't have to pick its own grade by hand — leave `grade` unset on a nested `Island`/`Card` and it escalates one step above its parent automatically. The constraint is deliberate: a shallow, forced hierarchy pushes you toward _separating_ elements with islands instead of stacking surfaces indefinitely.
+
+**Buttons cannot be placed outside `ButtonIsland`. That's a constant.** `ButtonIsland` is the universal way to use buttons in Stella — it groups them, draws the shared hairlines between adjacent buttons carefully, and takes its visual cues directly from GTK/Adwaita's linked-button-group convention (going back to GTK 3's tab buttons). `ButtonIsland` + `Button` together cover far more ground than that description implies: context menus, icon-only toolbars, selection rows, tab rows, and sidebars all come out of the same pairing. See [WIKI.md](./WIKI.md#buttons--buttonisland) for the props and worked examples.
 
 ## Packages
 
-- **`@stella-componente/terra`** — the base. Thin, opinionated, functional. Every component follows atomic design (`atoms/` → `molecules/` → `organisms/`), is built on native HTML elements wherever one exists, and ships with keyboard navigation + ARIA semantics by default, not as an opt-in prop.
-- **`@stella-componente/vidrio`** — the expansion. A superset of Terra adding purely aesthetic richness: frosted glass, dynamic lighting, textures, dynamic borders. Never required to use Terra alone.
+### `@stella-componente/terra`
 
-**Terra never depends on Vidrio. Vidrio depends on Terra.** That direction is fixed.
+The quintessence of Stella — the base package, and the one that's actually usable today. It ships a full set of components for building a desktop application's UI, organized atomic-design-style (`atoms/` → `molecules/` → `organisms/` → layout primitives), plus three app-level providers for theming, overlay stacking, and notifications.
 
-`@stella-componente/terra` has a working component set (below) and is the package to reach for today. `@stella-componente/vidrio` is scaffolded but empty — nothing has been built on top of Terra yet, so it stays unpublished (`private: true`) rather than squatting the name.
+<details>
+<summary><strong>Full component list</strong></summary>
+
+<br>
+
+**Atoms**
+
+`Avatar` · `Badge` · `Button` · `Checkbox` · `Code` · `Divider` · `Icon` · `Input` · `Island` · `Kbd` · `Link` · `Progress` · `Radio` · `Skeleton` · `Slider` · `Spinner` · `Switch` · `Text` · `Textarea`
+
+**Layout**
+
+`FlexContainer` · `ScrollArea`
+
+**Molecules**
+
+`Alert` · `Breadcrumbs` · `ButtonIsland` · `Card` · `CheckboxGroup` · `Field` · `Notification` · `RadioGroup` · `SearchField` · `Select` · `Tooltip` · `WindowControls`
+
+**Organisms**
+
+`Dialog` · `EmptyState` · `List` · `Menu` · `Popover` · **`SettingsMenu`** — data-driven settings UI: categories on the left, schema-driven fields on the right. Feed it a `SettingsSchema` and it doesn't care where the values come from. Ships with a pre-built Appearance category wired straight to `ThemeProvider`. · `WindowChrome`
+
+**Providers**
+
+`ThemeProvider` (theming), `OverlayProvider` (stacking + Escape scoping for `Dialog`/`Menu`/`Popover`), `NotificationProvider` (toasts)
+
+For a hands-on guide to every one of these — what to import, what props to pass, working snippets — see **[WIKI.md](./WIKI.md)**.
+
+</details>
 
 ```bash
 pnpm add @stella-componente/terra@alpha
 ```
 
-The `alpha` tag is required: `latest` is deliberately unset while the API can still move, so a bare `pnpm add @stella-componente/terra` won't resolve. See [WIKI.md's publish checklist](./WIKI.md#how-to-develop) for how releases are cut.
+### `@stella-componente/vidrio`
 
-## Project status
+The aesthetic expansion — frosted glass, dynamic lighting, textures, dynamic borders. A strict superset of Terra (Terra never depends on Vidrio; Vidrio depends on Terra), and never required to use Terra alone. Currently an empty scaffold — nothing has been built on top of Terra yet, so it stays unpublished rather than squatting the name.
 
-**Alpha, and honest about it.** Terra's component set is complete enough to build a real app against — the author uses it for exactly that — but it is pre-1.0 and the API is still allowed to move. It publishes under the `alpha` dist-tag, so `latest` stays unset and installing it is a deliberate choice.
+### `@stella-componente/esterno` — **planned**
 
-What's solid:
+A set of **external** tools for interacting with Stella from outside the component tree — optional, and designed to be purely runtime-agnostic. What's planned so far:
 
-- 23 components across atoms, molecules, organisms and layout, plus three app-level providers.
-- 204 tests: 166 in Vitest for logic, ARIA and keyboard behaviour, 38 in Playwright for things only a real browser can answer (resolved CSS, computed geometry), with axe-core scanning the component tree.
-- Zero runtime dependencies. React and React DOM are the only peers.
-- CI runs format, typecheck, both test layers and the build on every push.
+- **Theme settings save/load**, via two functions rather than one: a TS-native function for a Stella app running as a plain web app, and an IPC-through-and-through function for Tauri/Electron, where persistence has to cross the runtime boundary.
+- **A mechanism to swap the active CSS file** — hot-loading a different generated theme bundle at runtime.
 
-What isn't, yet — the full list lives in [WIKI.md → Known gaps](./WIKI.md#known-gaps):
+### `@stella-componente/bellezza` — **planned**
 
-- `@stella-componente/vidrio` is an empty scaffold.
-- Component tests run in Chromium only, so the visual layer is unverified on WebKit.
-- Prerelease, so no semver guarantees yet — pin an exact version if that matters. No ESLint config.
+An upgrade to the Appearance settings category, plus a set of ready-made custom CSS color schemes modeled on popular, well-loved themes — for people who want Stella to look like a specific palette without hand-authoring one.
 
-## Components (`@stella-componente/terra`)
+## Writing your own components
 
-### Atoms
+Stella's component set won't cover everything — sooner or later you'll want something it doesn't ship. That's fine: everything is styled with CSS Modules, so plugging in is just a matter of following the same shape Stella's own components use — same file layout, the same `--stella-size-*` scale, the same grade-indirected tokens for elevation.
 
-| Component  | What it is                                                                                                                                                 |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Avatar`   | Circular user/entity representation — image with initials fallback.                                                                                        |
-| `Badge`    | Compact status/label indicator. Non-interactive.                                                                                                           |
-| `Button`   | The primary interactive element. Carries no border, surface, or radius of its own — all come from the wrapping `ButtonIsland`.                             |
-| `Checkbox` | Native `<input type="checkbox">`, including indeterminate state.                                                                                           |
-| `Divider`  | Visual separator between content groups (horizontal or vertical rule).                                                                                     |
-| `Icon`     | Sizing/color wrapper around any icon element. Terra ships no icon set — bring your own; a handful of chrome/SettingsMenu glyphs live in `utils/icons.tsx`. |
-| `Input`    | Bare text field atom.                                                                                                                                      |
-| `Island`   | The core structural container — panel, pill, or card surface with tone/shape variants everything else builds on.                                           |
-| `Radio`    | Native `<input type="radio">`, with roving arrow-key navigation between grouped radios for free.                                                           |
-| `Slider`   | Native `<input type="range">` with ghost-thumb overlay, animated fill, and editable value readout.                                                         |
-| `Spinner`  | Indeterminate loading indicator, inherits `currentColor`.                                                                                                  |
-| `Switch`   | GTK-style toggle — no native HTML switch element, so this is the one atom with custom keyboard/ARIA wiring on top of a `<button>`.                         |
-| `Text`     | Typography primitive mapping directly to Terra's type scale.                                                                                               |
-
-### Layout
-
-| Component       | What it is                                                                                                                                                        |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `FlexContainer` | Configurable flexbox wrapper — the layout primitive everything else composes with. One-dimensional only; reach for CSS Grid directly for two-dimensional layouts. |
-
-### Molecules
-
-| Component        | What it is                                                                                                                                                                                                                                                                                                        |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ButtonIsland`   | A row of related actions rendered as one pill-shaped toolbar cluster. Adjacent buttons get an automatic hairline (a real `Divider`, auto-inserted), and children fill the island's height so clusters of different `size` still line up. `ButtonIsland.Separator` is available for an explicit sub-cluster break. |
-| `Notification`   | A single toast card — status color carried by the icon, not a colored border. Typically rendered for you by `NotificationProvider`.                                                                                                                                                                               |
-| `Tooltip`        | Anchored hover/focus label.                                                                                                                                                                                                                                                                                       |
-| `WindowControls` | Minimize/maximize/close cluster for a custom title bar.                                                                                                                                                                                                                                                           |
-
-### Organisms
-
-| Component      | What it is                                                                                                                                                                                 |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Dialog`       | GTK4/libadwaita-style modal. Compound component (`Dialog.Header` / `.Title` / `.Description` / `.Body` / `.Footer`), focus trap, Escape-to-close, backdrop click, fade-out exit animation. |
-| `Menu`         | Anchored action list (dropdown or right-click context menu) with full keyboard navigation (arrow keys, typeahead, Home/End).                                                               |
-| `Popover`      | Anchored floating content, same positioning/stacking machinery as `Menu`.                                                                                                                  |
-| `SettingsMenu` | Data-driven settings UI — categories on the left, schema-driven fields on the right. Feed it a `SettingsSchema`; it doesn't care where values come from.                                   |
-| `WindowChrome` | Runtime-agnostic custom title bar (Tauri/Electron/web), draggable region, optional tabs/tools/system controls.                                                                             |
-
-## Theming
-
-`ThemeManager` writes CSS custom properties to the document root; `ThemeProvider`/`useTheme` is the React binding most consumers use. Five independent axes, each backed by a scale token — set one, everything reading it updates, no re-render required:
-
-There is deliberately **no accent hue**. Stella-Componente has a single neutral colour scheme, and colour is reserved for exactly five status meanings (success / info / warning / error / debug) carried by `Badge` and `Notification`. A "checked" control inverts to the foreground tone rather than picking a brand colour.
-
-| Axis          | Values                                |
-| ------------- | ------------------------------------- |
-| `colorScheme` | `light` / `dark` / `system`           |
-| `radius`      | `sharp` / `default` / `round`         |
-| `density`     | `compact` / `default` / `comfortable` |
-| `borderWidth` | `none` / `thin` / `default` / `thick` |
-| `motion`      | `system` / `reduced` / `off`          |
-
-```tsx
-import { ThemeProvider, useTheme } from "@stella-componente/terra";
-
-function App() {
-	return (
-		<ThemeProvider
-			defaultConfig={loadedFromDisk}
-			onChange={(c) => saveToDisk(c)}
-		>
-			<YourApp />
-		</ThemeProvider>
-	);
-}
-```
-
-Full example, provider list, and the `ThemeManager` API are in [WIKI.md → How to use components](./WIKI.md#how-to-use-components).
-
-## Design principles
-
-1. Terra stays thin — every dependency is justified against bundle size; the default answer to "should we add this" is no.
-2. Atomic design structure — atoms → molecules → organisms → layout primitives, no flat component dumps.
-3. Accessibility isn't optional — keyboard navigation and correct ARIA semantics ship by default on every interactive component.
-4. Theming is CSS custom properties, not JS-computed styles at runtime.
-5. Visual identity is GTK 4 / libadwaita-inspired, not a generic design system — when a visual decision is ambiguous, it defaults toward what libadwaita would do.
+The full walkthrough, with code, lives in **[WIKI.md → Writing new components](./WIKI.md#writing-new-components)**.
 
 ## Getting started
 
 ```bash
 pnpm install
 pnpm typecheck
-pnpm test                                  # Vitest — logic, ARIA, keyboard
-pnpm --filter @stella-componente/terra test:ct        # Playwright — resolved CSS, geometry, axe
+pnpm test                                              # Vitest — logic, ARIA, keyboard
+pnpm --filter @stella-componente/terra test:ct         # Playwright — resolved CSS, geometry, axe
 ```
 
-The component showcase used for day-to-day development (`packages/terra-test`) lives in its own repository and is **not** part of this one — it's gitignored here, so `pnpm dev` has nothing to run on a fresh clone. Drop a Vite app in at `packages/terra-test` and the pnpm workspace picks it up automatically, consuming `@stella-componente/terra` straight from source with hot reload.
-
-See [WIKI.md → How to develop](./WIKI.md#how-to-develop) for the build, test, and publish workflow.
+See **[WIKI.md](./WIKI.md)** for a practical, component-by-component usage guide, [CONTRIBUTING.md](./CONTRIBUTING.md) for the full dev, test, and PR workflow, and [CHANGELOG.md](./CHANGELOG.md) for what's shipped.
 
 ## License
 

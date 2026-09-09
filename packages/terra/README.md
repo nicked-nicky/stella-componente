@@ -1,8 +1,8 @@
 # @stella-componente/terra
 
-[![npm](https://img.shields.io/npm/v/@stella-componente/terra/alpha.svg)](https://www.npmjs.com/package/@stella-componente/terra)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![Runtime dependencies: 0](https://img.shields.io/badge/runtime%20deps-0-success.svg)](#zero-runtime-dependencies)
+[![npm](https://img.shields.io/npm/v/@stella-componente/terra?label=npm&color=df3020&labelColor=8a1a0f)](https://www.npmjs.com/package/@stella-componente/terra)
+[![License](https://img.shields.io/badge/License-MIT-237ad7?labelColor=17518f)](./LICENSE)
+[![Runtime-deps](https://img.shields.io/badge/Runtime--deps-ZERO!-90cb10?labelColor=6c990d)](#zero-runtime-dependencies)
 
 A React-first, runtime-agnostic UI kit with a GTK 4 / libadwaita-inspired visual identity — built for fast, native-feeling desktop apps (Tauri, Electron, or any webview), and just as usable on the web.
 
@@ -15,7 +15,7 @@ npm install @stella-componente/terra@alpha
 # or: pnpm add @stella-componente/terra@alpha
 ```
 
-React 18 or 19 is a peer dependency. `lucide-react` is an _optional_ peer — only needed if you feed Lucide icons to `Icon`.
+React 18 or 19 is a peer dependency. That's the only peer — Terra brings no icon set of its own; feed `Icon` whatever SVG/icon component you already use.
 
 ## Quick start
 
@@ -52,17 +52,19 @@ export function App() {
 }
 ```
 
-`ThemeProvider` for theming, `OverlayProvider` for `Dialog`/`Menu`/`Popover` stacking and Escape scoping, `NotificationProvider` for toasts. Everything else works without any of them.
+`ThemeProvider` for theming, `OverlayProvider` for `Dialog`/`Menu`/`Popover` stacking and Escape scoping, `NotificationProvider` for toasts (and for `Code`'s copy-to-clipboard feedback). Everything else works without any of them.
+
+> **One hard rule:** every `Button` renders inside a `ButtonIsland` — there's no supported bare-button usage. `ButtonIsland` groups buttons, draws the shared hairline between adjacent ones, and is the building block behind toolbars, icon-only clusters, selection rows, tab rows, and sidebars alike.
 
 ## What's in it
 
-22 components across atoms, molecules, organisms and layout primitives — `Avatar`, `Badge`, `Button`, `Checkbox`, `Divider`, `Icon`, `Input`, `Island`, `Radio`, `Spinner`, `Switch`, `Text`, `FlexContainer`, `ButtonIsland`, `Notification`, `Tooltip`, `WindowControls`, `Dialog`, `Menu`, `Popover`, `SettingsMenu`, `WindowChrome`.
+40 components across atoms, molecules, organisms and layout primitives, plus the three providers above — `Avatar`, `Badge`, `Button`, `Checkbox`, `Code`, `Divider`, `Icon`, `Input`, `Island`, `Kbd`, `Link`, `Progress`, `Radio`, `Skeleton`, `Slider`, `Spinner`, `Switch`, `Text`, `Textarea`, `FlexContainer`, `ScrollArea`, `Alert`, `Breadcrumbs`, `ButtonIsland`, `Card`, `CheckboxGroup`, `Field`, `Notification`, `RadioGroup`, `SearchField`, `Select`, `Tooltip`, `WindowControls`, `Dialog`, `EmptyState`, `List`, `Menu`, `Popover`, `SettingsMenu`, `WindowChrome`.
 
-Full component reference, architecture notes and the theming API live in the [repository README](https://github.com/nicked-nicky/stella-componente#readme) and [WIKI](https://github.com/nicked-nicky/stella-componente/blob/alpha/WIKI.md).
+Full component reference, architecture notes and the theming API live in the [repository README](https://github.com/nicked-nicky/stella-componente#readme).
 
 ## Theming
 
-Four independent axes, each written to the document root as a CSS custom property — change one and everything reading it updates with no React re-render:
+Five independent axes, each written to the document root as a CSS custom property — change one and everything reading it updates with no React re-render:
 
 | Axis          | Values                                |
 | ------------- | ------------------------------------- |
@@ -70,16 +72,23 @@ Four independent axes, each written to the document root as a CSS custom propert
 | `radius`      | `sharp` / `default` / `round`         |
 | `density`     | `compact` / `default` / `comfortable` |
 | `borderWidth` | `none` / `thin` / `default` / `thick` |
+| `motion`      | `system` / `reduced` / `off`          |
 
 There is deliberately no accent hue: Stella-Componente has a single neutral colour scheme, and colour is reserved for five status meanings (success / info / warning / error / debug).
+
+Separately, surfaces (`Island`, `Card`, and the overlay organisms) carry a `grade` (`'global' | 'default' | 'elevated'`) rather than a fixed tone. Leave it unset and a nested surface escalates one step above its parent automatically — set it explicitly to override.
 
 Persistence is your job — `ThemeProvider`'s `onChange` hands you a plain serialisable config to save wherever your runtime saves things (Tauri's fs plugin, Electron IPC, `localStorage`).
 
 ## Zero runtime dependencies
 
-Terra ships no runtime dependencies at all. Styling is CSS Modules with design tokens, so there is no runtime CSS-in-JS and no style recalculation on theme change. Output is unbundled — `tsc` compiles `src/` to `dist/` 1:1 with the CSS copied alongside — so your bundler tree-shakes it directly.
+Terra ships no runtime dependencies at all. Styling is CSS Modules with design tokens, so there is no runtime CSS-in-JS and no style recalculation on theme change. Output is unbundled — `tsc` compiles `src/` to `dist/` 1:1 with the CSS copied alongside — so your bundler tree-shakes it directly. `scripts/measure-treeshake.mjs` bundles synthetic single-component entrypoints to keep that claim honest; rerun it rather than trusting a stale number in a README.
 
 Because the output uses extensionless relative imports, it needs a bundler (Vite, webpack, Next, any Tauri/Electron frontend). Running it under plain Node ESM won't work.
+
+## Roadmap
+
+Two more packages are planned, both currently unbuilt: `@stella-componente/esterno` (external tooling — theme settings save/load, a TS-native function plus an IPC-based one for Tauri/Electron, and a mechanism to swap the active CSS file) and `@stella-componente/bellezza` (an Appearance-menu upgrade plus a set of built-in CSS color schemes modeled on popular themes). See the [repository README](https://github.com/nicked-nicky/stella-componente#readme) for the full picture.
 
 ## Browser support
 

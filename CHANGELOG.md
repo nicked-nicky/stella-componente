@@ -2,7 +2,43 @@
 
 All notable changes to Stella-Componente are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). `@stella-componente/terra` follows [Semantic Versioning](https://semver.org/) from its first published release; pre-1.0, a minor bump may still carry breaking changes (the standard semver-0.x reading). `@stella-componente/vidrio` remains unpublished and workspace-only.
 
-## [Unreleased]
+## [0.1.0-alpha.2] — 2026-09-09
+
+### Added
+
+- **17 new components**, taking the kit from 23 to 40 (plus the three providers): atoms `Code`, `Kbd`, `Link`, `Progress`, `Skeleton`, `Textarea`; layout `ScrollArea`; molecules `Alert`, `Breadcrumbs`, `Card`, `CheckboxGroup`, `Field`, `RadioGroup`, `SearchField`, `Select`; organisms `EmptyState`, `List`.
+- **Grade-based elevation system** (`internal/grade.ts`: `resolveGrade`, `resolveSurfaceGrade`, `nextGrade`) — surfaces now carry a `grade` (`'global' | 'default' | 'elevated'`) instead of a fixed tone, and nested surfaces (`Card` inside `Card`, an overlay off an `Island`) escalate their own grade from their parent by default rather than the caller hand-picking a tone at every level.
+- **`internal/` layer** — a new non-exported top-level source category for shared primitives that aren't public API: `grade.ts` (above) and `useModalSurface.ts`, which `Dialog` builds its portal/focus-trap/Escape/backdrop machinery on.
+- **`packages/terra/scripts/measure-treeshake.mjs`** — bundles synthetic single-component consumer entrypoints with Vite in lib mode and reports JS/CSS weight (raw and gzipped), so a per-component or whole-kit payload claim in the docs is a number that was actually measured, not estimated.
+- Shared style modules for cross-cutting CSS that used to be copy-pasted per component: `styles/shared/controlGroup.module.css`, `dismissButton.module.css`, `field.module.css`, `focusFill.module.css`, `iconSize.module.css`.
+- `utils/cx.ts` — a small dependency-free `classnames`-style joiner, and `utils/flattenFragments.ts` — flattens `<>...</>` fragments out of a compound component's `children` so consumers can wrap children in a fragment without breaking `Children.forEach`-based logic.
+- **Test coverage for the components that carry real behaviour**: `RadioGroup`, `CheckboxGroup`, `Field`, `SearchField`, `List`, `Slider`, `Tooltip`, `Popover`, `ThemeProvider` and `EmptyState` each gained a colocated Vitest suite, and `Switch`/`Radio` gained Playwright CT suites for the parts whose correctness is a resolved CSS value.
+
+### Changed
+
+- **Every design token was renamed.** The semantic names (`--stella-surface-card`, `--stella-text-primary`, `--stella-state-hover`, `--stella-border-default`, and the rest) are replaced by numbered scales — `--stella-surface-0…9`, `--stella-text-0…3`, `--stella-border-0…9` — plus a grade-indirected ladder (`--stella-g-surface-*`, `--stella-g-border-*`) that resolves against the nearest `data-stella-grade` ancestor. A fixed tone could only ever be right at one nesting depth; a numbered scale read through a grade is right at every depth. **Breaking** for any consumer referencing a Terra token in their own CSS.
+- **`Island`'s `tone` prop is gone**, replaced by `grade` (see Added, above). **Breaking** for any code passing `tone` directly.
+- **`:focus-visible` is now a contrast fill, never an outline.** Interactive components recolour their own parts on keyboard focus instead of drawing a ring around them: button-shaped controls invert wholesale (`--stella-focus` background, `--stella-g-surface-0` text) via the new shared `focusFill` module, controls with distinct parts recolour those parts (the `Switch`'s track and thumb, the `Checkbox`'s box and tick, the `Radio`'s dot and mark, the `Slider`'s thumb), and text fields — where the value has to stay readable while typing — shift their border to the focus colour instead of inverting. **Breaking** for anyone who styled around the old rings.
+- **Explanatory comments are gone from `src/`.** The build already stripped them from `dist/`; they are now absent at the source too.
+- Published tarball now actually includes `dist/**/*.map` in `package.json`'s `files` array — the alpha.1 changelog described debugging via inline source maps, but the maps themselves weren't listed and so were never published; fixed here.
+- Components whose development is on hold now carry an `.on-pause` marker file in their directory, and that marker is honoured by `.gitignore`, `.prettierignore`, `.npmignore`, both `tsconfig`s, and both test runners. `scripts/copy-css.mjs` reads the marker directly, which is what stops a paused component's stylesheet reaching `dist/` even when nothing of it is compiled.
+
+### Fixed
+
+- **A selected `Button` swallowed its own focus indicator.** `.button.active` and `.focusFill:focus-visible` share a specificity, and the selected rule came later — so the current row of a `SettingsMenu` nav, or an active `Menu.Item`, could be keyboard-focused with no visible change at all. Selected states now yield to `:focus-visible` explicitly. `Menu.Item`'s destructive colour had the same problem, leaving red text on the dark focus fill.
+- **`SearchField`'s clear button left the typed text in the field.** In its uncontrolled branch the underlying `Input` receives `defaultValue`, so resetting component state hid the clear button while the DOM node kept its value. It now clears the node too.
+- **A title bar with no tabs could not be dragged.** Every child of `WindowChrome` opted out of the drag region — including the brand pill at the leading edge and the tabs region, which grows to fill whatever space is left even when it is empty — leaving no draggable pixel and no working double-click-to-maximize. `noDrag` is now applied only to genuinely interactive clusters.
+
+### Removed
+
+- **Commit-pulse feedback system** (`utils/usePulse.ts`, `styles/shared/pulseRing.module.css`, the `--stella-pulse-ring-animation`/`--stella-pulse-ring` tokens) — removed entirely, including from `Checkbox`, `Radio`, `Switch` and `Slider`. `Skeleton`'s shimmer animation is unrelated and unaffected.
+
+### Docs
+
+- **`WIKI.md`** — a new practical, code-first guide: `ButtonIsland`/`Button` structure and props, building a dismissable `SettingsMenu` with a real schema, a short usage snippet for every other shipped component, a full "writing your own components" walkthrough, and how the overlay/notification hooks (`useOverlayLayer`, `useDismissableOverlay`, `useNotifications`) actually work. Linked from `README.md` and `CONTRIBUTING.md`.
+- **`RELEASING.md`** — the verification runbook: what the workspace actually contains, the CI-equivalent command sequence, why `dist/` has to be cleaned before packing, and a checklist for what should and should not be inside the tarball.
+- **README overhaul.** Documents the Design Language for the first time — islands as the unit of separation, the three-grade nesting ceiling (`global` / `default` / `elevated`), and the "no bare buttons outside `ButtonIsland`" rule — and records two newly planned packages, `@stella-componente/esterno` (external theme-settings/CSS-swap tooling) and `@stella-componente/bellezza` (Appearance-menu upgrade + built-in color schemes). `CONTRIBUTING.md` gained a Design Language section codifying the same rules as review-blocking requirements; `packages/terra/README.md` gained a roadmap note and calls out the `ButtonIsland` requirement explicitly.
+- `docs/` (the two audit documents added and removed within this same unreleased window) is gone — the maintainer didn't need it going forward.
 
 ## [0.1.0-alpha.1] — 2026-08-21
 
