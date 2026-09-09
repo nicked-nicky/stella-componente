@@ -1,0 +1,117 @@
+.list {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	font-family: var(--stella-font-ui);
+	outline: none;
+}
+
+.item {
+	display: flex;
+	align-items: center;
+	gap: var(--stella-space-3);
+	padding: var(--stella-space-2) var(--stella-space-3);
+	min-height: var(--stella-size-md);
+
+	font-size: var(--stella-text-body);
+	color: var(--stella-text-1);
+	background-color: transparent;
+	cursor: pointer;
+	user-select: none;
+
+	transition:
+		background-color var(--stella-motion-fast) var(--stella-easing-out),
+		color var(--stella-motion-fast) var(--stella-easing-out);
+}
+
+.list[data-stella-grade="global"] .item:hover:not(.disabled) {
+	color: var(--stella-text-0);
+	background-color: var(--stella-surface-2);
+}
+
+.list[data-stella-grade="default"] .item:hover:not(.disabled) {
+	color: var(--stella-text-0);
+	background-color: var(--stella-surface-3);
+}
+
+.list[data-stella-grade="elevated"] .item:hover:not(.disabled) {
+	color: var(--stella-text-0);
+	background-color: var(--stella-surface-4);
+}
+
+.list[data-stella-grade="global"] .item:active:not(.disabled) {
+	background-color: var(--stella-surface-3);
+}
+
+.list[data-stella-grade="default"] .item:active:not(.disabled) {
+	background-color: var(--stella-surface-4);
+}
+
+.list[data-stella-grade="elevated"] .item:active:not(.disabled) {
+	background-color: var(--stella-surface-5);
+}
+
+.item[data-selected] {
+	color: var(--stella-text-0);
+	background-color: var(--stella-selected);
+	font-weight: var(--stella-text-body-strong-weight);
+}
+
+.list[data-stella-grade] .item[data-selected]:hover:not(.disabled) {
+	background-color: var(--stella-selected);
+}
+
+.disabled {
+	color: var(--stella-text-3);
+	cursor: not-allowed;
+}
+
+.icon {
+	composes: icon from "../../styles/shared/controlIcon.module.css";
+	flex-shrink: 0;
+	color: var(--stella-text-2);
+}
+
+.item[data-selected] .icon {
+	color: var(--stella-text-0);
+}
+
+.item:focus-visible {
+	background-color: var(--stella-focus);
+	color: var(--stella-g-surface-0, var(--stella-focus-text));
+}
+
+.item:focus-visible .icon,
+.item:focus-visible .description,
+.item:focus-visible .trailing {
+	color: inherit;
+}
+
+.content {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	flex: 1;
+	min-width: 0;
+}
+
+.label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.description {
+	font-size: var(--stella-text-caption);
+	font-weight: var(--stella-text-caption-weight);
+	color: var(--stella-text-2);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.trailing {
+	flex-shrink: 0;
+	font-size: var(--stella-text-caption);
+	color: var(--stella-text-2);
+}

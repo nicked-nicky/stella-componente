@@ -1,0 +1,51 @@
+.track {
+	position: relative;
+	overflow: hidden;
+	width: 100%;
+	border-radius: var(--stella-radius-panel);
+	background-color: var(--stella-g-surface-0);
+}
+
+.size-sm {
+	height: var(--stella-space-1);
+}
+
+.size-md {
+	height: var(--stella-space-2);
+}
+
+.fill {
+	height: 100%;
+	border-radius: var(--stella-radius-panel);
+	transition: width var(--stella-motion-base) var(--stella-easing-out);
+	background-color: var(--stella-g-surface-2);
+}
+
+.indeterminate {
+	position: absolute;
+	width: 40%;
+	animation: stella-progress-slide 1.4s var(--stella-easing-in-out) infinite;
+}
+
+@keyframes stella-progress-slide {
+	from {
+		left: -40%;
+	}
+	to {
+		left: 100%;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.indeterminate {
+		animation-duration: 2s;
+	}
+}
+
+:global([data-stella-motion="reduced"]) .indeterminate {
+	animation-duration: 2s;
+}
+
+:global([data-stella-motion="off"]) .indeterminate {
+	animation: stella-progress-slide 2s var(--stella-easing-in-out) infinite !important;
+}

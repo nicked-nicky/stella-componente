@@ -1,0 +1,15 @@
+.field {
+	composes: field from "../../styles/shared/field.module.css";
+}
+
+.hint {
+	font-family: var(--stella-font-ui);
+	font-size: var(--stella-text-caption);
+	color: var(--stella-text-1);
+}
+
+.error {
+	font-family: var(--stella-font-ui);
+	font-size: var(--stella-text-caption);
+	color: var(--stella-error-text);
+}

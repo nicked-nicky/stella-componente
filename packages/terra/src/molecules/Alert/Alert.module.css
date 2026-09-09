@@ -1,0 +1,118 @@
+.alert {
+	animation: var(--stella-appear-animation);
+	box-sizing: border-box;
+
+	display: flex;
+	align-items: flex-start;
+	gap: var(--stella-space-3);
+	width: 100%;
+	padding: var(--stella-space-3) var(--stella-space-4);
+
+	font-family: var(--stella-font-ui);
+	font-size: var(--stella-text-body);
+	border: var(--stella-border-width) solid transparent;
+	border-radius: var(--stella-radius-panel);
+}
+
+.icon {
+	composes: icon from "../../styles/shared/controlIcon.module.css";
+	flex-shrink: 0;
+	margin-top: 0.1em;
+	color: inherit;
+}
+
+.content {
+	display: flex;
+	flex-direction: column;
+	gap: var(--stella-space-1);
+	flex: 1;
+	min-width: 0;
+}
+
+.title {
+	font-size: var(--stella-text-body-strong);
+	font-weight: var(--stella-text-body-strong-weight);
+}
+
+.message {
+	line-height: 1.45;
+}
+
+.dismiss {
+	composes: dismiss from "../../styles/shared/dismissButton.module.css";
+
+	width: var(--stella-icon-size-md);
+	height: var(--stella-icon-size-md);
+	margin: 0 calc(-1 * var(--stella-space-1)) 0 0;
+
+	color: inherit;
+	opacity: 0.7;
+
+	transition:
+		opacity var(--stella-motion-fast) var(--stella-easing-out),
+		background-color var(--stella-motion-fast) var(--stella-easing-out);
+}
+
+/*
+ * !important below: Button's own hover/active states tint toward grade
+ * surfaces and flip text color to --stella-text-0. This dismiss button is
+ * meant to stay tinted to the alert's own semantic color instead, so those
+ * two properties need to reliably win regardless of stylesheet order.
+ */
+.dismiss:hover,
+.dismiss:active {
+	opacity: 1;
+	color: inherit !important;
+	background-color: var(--stella-alert-dismiss-tint) !important;
+}
+
+.dismiss:focus-visible {
+	opacity: 1;
+	background-color: var(--alert-fill) !important;
+	color: var(--alert-surface) !important;
+}
+
+.info {
+	--alert-fill: var(--stella-info-text);
+	--alert-surface: var(--stella-info-bg);
+
+	background-color: var(--stella-info-bg);
+	border-color: var(--stella-info-border);
+	color: var(--stella-info-text);
+}
+
+.success {
+	--alert-fill: var(--stella-success-text);
+	--alert-surface: var(--stella-success-bg);
+
+	background-color: var(--stella-success-bg);
+	border-color: var(--stella-success-border);
+	color: var(--stella-success-text);
+}
+
+.warning {
+	--alert-fill: var(--stella-warning-text);
+	--alert-surface: var(--stella-warning-bg);
+
+	background-color: var(--stella-warning-bg);
+	border-color: var(--stella-warning-border);
+	color: var(--stella-warning-text);
+}
+
+.error {
+	--alert-fill: var(--stella-error-text);
+	--alert-surface: var(--stella-error-bg);
+
+	background-color: var(--stella-error-bg);
+	border-color: var(--stella-error-border);
+	color: var(--stella-error-text);
+}
+
+.debug {
+	--alert-fill: var(--stella-debug-text);
+	--alert-surface: var(--stella-debug-bg);
+
+	background-color: var(--stella-debug-bg);
+	border-color: var(--stella-debug-border);
+	color: var(--stella-debug-text);
+}

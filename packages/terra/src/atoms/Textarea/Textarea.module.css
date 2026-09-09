@@ -1,0 +1,109 @@
+.wrapper {
+	animation: var(--stella-appear-animation);
+
+	display: block;
+	position: relative;
+	width: 100%;
+
+	font-family: var(--stella-font-ui);
+	border: var(--stella-border-width) solid transparent;
+	border-radius: var(--stella-radius-panel);
+
+	outline: none;
+
+	transition:
+		background-color var(--stella-motion-fast) var(--stella-easing-out),
+		border-color var(--stella-motion-fast) var(--stella-easing-out);
+}
+
+.wrapper {
+	composes: surface from "../../styles/shared/field.module.css";
+}
+
+.wrapper:hover:not(.disabled) {
+	background-color: var(--stella-g-surface-1);
+	border-color: var(--stella-g-border-1);
+}
+
+.wrapper:focus-within:not(.disabled) {
+	background-color: var(--stella-g-surface-1);
+	border-color: var(--stella-g-border-1);
+}
+
+.wrapper:focus-within {
+	border-color: var(--stella-focus);
+}
+
+.size-sm {
+	padding: var(--stella-space-2);
+	font-size: var(--stella-text-caption);
+}
+
+.size-sm .textarea {
+	min-height: calc(var(--stella-text-caption-lh) * 3em);
+}
+
+.size-md {
+	padding: var(--stella-space-2) var(--stella-space-3);
+	font-size: var(--stella-text-body);
+}
+
+.size-md .textarea {
+	min-height: calc(var(--stella-text-body-lh) * 3em);
+}
+
+.size-lg {
+	padding: var(--stella-space-3) var(--stella-space-4);
+	font-size: var(--stella-text-body);
+}
+
+.size-lg .textarea {
+	min-height: calc(var(--stella-text-body-lh) * 4em);
+}
+
+.error {
+	border-color: var(--stella-error-border);
+}
+
+.wrapper.error:focus-within {
+	border-color: var(--stella-error-border-strong);
+}
+
+.disabled {
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+
+.textarea {
+	display: block;
+	width: 100%;
+	min-width: 0;
+
+	font: inherit;
+	color: var(--stella-text-0);
+	background-color: transparent;
+	border: none;
+	outline: none;
+	resize: vertical;
+}
+
+.textarea::placeholder {
+	color: var(--stella-text-2);
+}
+
+.textarea:disabled {
+	cursor: not-allowed;
+}
+
+.autoGrow {
+	overflow: hidden;
+	resize: none;
+}
+
+.field {
+	composes: field from "../../styles/shared/field.module.css";
+}
+
+.fieldLabel {
+	composes: fieldLabel from "../../styles/shared/field.module.css";
+}

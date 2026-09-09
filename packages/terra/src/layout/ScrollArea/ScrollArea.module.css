@@ -1,0 +1,52 @@
+.scrollArea {
+	min-width: 0;
+	min-height: 0;
+	scrollbar-gutter: stable;
+
+	scrollbar-color: transparent transparent;
+	transition: scrollbar-color var(--stella-motion-fast) var(--stella-easing-out);
+}
+
+.vertical {
+	overflow-y: auto;
+	overflow-x: hidden;
+}
+
+.horizontal {
+	overflow-x: auto;
+	overflow-y: hidden;
+}
+
+.both {
+	overflow: auto;
+}
+
+.grow {
+	flex: 1;
+}
+
+.scrollArea:hover,
+.scrollArea:focus-within {
+	scrollbar-color: var(--stella-border-1) transparent;
+}
+
+.scrollArea::-webkit-scrollbar-thumb {
+	background: transparent;
+	background-clip: padding-box;
+}
+
+.scrollArea:hover::-webkit-scrollbar-thumb,
+.scrollArea:focus-within::-webkit-scrollbar-thumb {
+	background: var(--stella-border-1);
+	background-clip: padding-box;
+}
+
+.hideScrollbar {
+	scrollbar-width: none;
+	scrollbar-gutter: auto;
+	-ms-overflow-style: none;
+}
+
+.hideScrollbar::-webkit-scrollbar {
+	display: none;
+}

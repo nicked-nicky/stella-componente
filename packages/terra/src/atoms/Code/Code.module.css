@@ -1,0 +1,25 @@
+.code {
+	font-family: var(--stella-font-mono);
+	font-size: 0.9em;
+	border-radius: var(--stella-radius-panel);
+	border: var(--stella-border-width) solid transparent;
+	padding: var(--stella-space-1) var(--stella-space-2);
+	transition:
+		background var(--stella-motion-fast) var(--stella-easing-out),
+		border var(--stella-motion-fast) var(--stella-easing-out);
+}
+
+.code:hover {
+	cursor: pointer;
+	background-color: var(--stella-g-surface-1);
+	border-color: var(--stella-g-border-1);
+}
+
+.code {
+	background-color: var(--stella-g-surface-0);
+}
+
+.code:active {
+	background-color: var(--stella-g-surface-2);
+	border-color: var(--stella-g-border-2);
+}

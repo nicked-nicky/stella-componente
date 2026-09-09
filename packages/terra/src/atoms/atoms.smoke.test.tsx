@@ -6,19 +6,16 @@ import { Badge } from './Badge';
 import { Divider } from './Divider';
 import { Spinner } from './Spinner';
 import { Text } from './Text';
+import { Link } from './Link';
+import { Progress } from './Progress';
+import { Skeleton } from './Skeleton';
+import { Code } from './Code';
+import { Kbd } from './Kbd';
+import { Icon } from './Icon';
+import { Island } from './Island';
 import { FlexContainer } from '../layout/FlexContainer';
+import { ScrollArea } from '../layout/ScrollArea';
 import { WindowControls } from '../molecules/WindowControls';
-
-// Deliberately thin. These components are presentational — they render
-// props into markup and hand the rest to CSS — so exhaustive tests here
-// would mostly assert that CSS Modules hashes class names, which is not
-// a useful thing to protect. What's worth pinning down is the semantic
-// contract each one makes (a Divider's role, a Spinner's label, Text's
-// variant→element mapping) and the couple of genuinely conditional
-// branches, so that a CI failure means something real.
-//
-// Anything whose correctness lives in computed CSS belongs in a
-// Playwright *.ct.tsx file instead — see WIKI.md's Testing section.
 
 describe('Avatar', () => {
   it('renders the image when a src is given', () => {
@@ -28,7 +25,6 @@ describe('Avatar', () => {
 
   it('falls back to initials when the image fails to load', () => {
     render(<Avatar src="/broken.jpg" alt="Jane Doe" initials="JD" />);
-    // Simulate the 404/offline case the onError handler exists for.
     fireEvent.error(screen.getByRole('img', { name: 'Jane Doe' }));
     expect(screen.getByText('JD')).toBeInTheDocument();
   });
@@ -51,9 +47,6 @@ describe('Badge', () => {
   });
 
   it('carries colour and variant as data attributes for CSS to resolve', () => {
-    // The whole component is an attribute carrier — Badge.module.css's
-    // [data-color][data-variant] rules do the work, so these attributes
-    // are the actual public contract, not an implementation detail.
     render(
       <Badge color="error" variant="filled">
         3 errors
@@ -74,9 +67,6 @@ describe('Badge', () => {
 
 describe('Divider', () => {
   it('uses role="separator" rather than an <hr>', () => {
-    // <hr> has no accessible vertical form, which is why this is a div
-    // with an explicit role — worth pinning so it doesn't get "simplified"
-    // back to an <hr> later.
     render(<Divider />);
     expect(screen.getByRole('separator')).toHaveAttribute(
       'aria-orientation',
@@ -128,7 +118,6 @@ describe('Text', () => {
   });
 
   it('keeps the visual variant and the semantic element independent', () => {
-    // The documented escape hatch: look like a title-2, still be the h1.
     render(
       <Text variant="title-2" as="h1">
         Smaller but primary
@@ -143,6 +132,84 @@ describe('Text', () => {
     render(<Text variant="body">Just copy</Text>);
     expect(screen.queryByRole('heading')).toBeNull();
     expect(screen.getByText('Just copy').tagName).toBe('SPAN');
+  });
+});
+
+describe('Link', () => {
+  it('renders a real anchor with its href', () => {
+    render(<Link href="/settings">Settings</Link>);
+    expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute(
+      'href',
+      '/settings'
+    );
+  });
+
+  it('forces target=_blank and a safe rel when external', () => {
+    render(
+      <Link href="https://example.com" external>
+        Docs
+      </Link>
+    );
+    const link = screen.getByRole('link', { name: 'Docs' });
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link.getAttribute('rel')).toContain('noopener');
+    expect(link.getAttribute('rel')).toContain('noreferrer');
+  });
+
+  it('applies the same safe rel when target=_blank is set manually, without external', () => {
+    render(
+      <Link href="https://example.com" target="_blank">
+        Docs
+      </Link>
+    );
+    const link = screen.getByRole('link', { name: 'Docs' });
+    expect(link.getAttribute('rel')).toContain('noopener');
+    expect(link.getAttribute('rel')).toContain('noreferrer');
+  });
+
+  it('leaves rel/target untouched for a plain in-app link', () => {
+    render(<Link href="/settings">Settings</Link>);
+    const link = screen.getByRole('link', { name: 'Settings' });
+    expect(link).not.toHaveAttribute('target');
+    expect(link).not.toHaveAttribute('rel');
+  });
+});
+
+describe('Progress', () => {
+  it('reports its value via the standard aria-value triplet', () => {
+    render(<Progress value={40} max={100} aria-label="Upload" />);
+    const bar = screen.getByRole('progressbar', { name: 'Upload' });
+    expect(bar).toHaveAttribute('aria-valuenow', '40');
+    expect(bar).toHaveAttribute('aria-valuemin', '0');
+    expect(bar).toHaveAttribute('aria-valuemax', '100');
+  });
+
+  it('omits aria-valuenow when indeterminate', () => {
+    render(<Progress aria-label="Working" />);
+    expect(
+      screen.getByRole('progressbar', { name: 'Working' })
+    ).not.toHaveAttribute('aria-valuenow');
+  });
+});
+
+describe('Skeleton', () => {
+  it('is hidden from assistive tech', () => {
+    const { container } = render(<Skeleton />);
+    expect(container.firstElementChild).toHaveAttribute('aria-hidden', 'true');
+  });
+});
+
+describe('Code', () => {
+  it('renders its children inside a real <code> element', () => {
+    render(<Code>pnpm install</Code>);
+    expect(screen.getByText('pnpm install').tagName).toBe('CODE');
+  });
+});
+
+describe('Kbd', () => {
+  it('renders its children inside a real <kbd> element', () => {
+    render(<Kbd>⌘</Kbd>);
+    expect(screen.getByText('⌘').tagName).toBe('KBD');
   });
 });
 
@@ -168,8 +235,6 @@ describe('FlexContainer', () => {
 
 describe('WindowControls', () => {
   it('renders only the buttons whose handler was supplied', () => {
-    // A consumer that can't minimize omits the handler and should get a
-    // two-button cluster — not a disabled placeholder.
     render(
       <WindowControls controls={{ maximize: () => {}, close: () => {} }} />
     );
@@ -209,5 +274,92 @@ describe('WindowControls', () => {
     await user.click(screen.getByRole('button', { name: 'Minimize' }));
     await user.click(screen.getByRole('button', { name: 'Close' }));
     expect(calls).toEqual(['minimize', 'close']);
+  });
+});
+
+describe('Icon', () => {
+  it('is decorative by default, hidden from assistive tech', () => {
+    const { container } = render(
+      <Icon>
+        <svg />
+      </Icon>
+    );
+    expect(container.firstElementChild).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('becomes a named image when given a title', () => {
+    render(
+      <Icon title="Search">
+        <svg />
+      </Icon>
+    );
+    expect(screen.getByRole('img', { name: 'Search' })).toBeInTheDocument();
+  });
+
+  it('sizes the child glyph rather than relying on the child to size itself', () => {
+    const { container } = render(
+      <Icon size="lg">
+        <svg />
+      </Icon>
+    );
+    const svg = container.querySelector('svg');
+    expect(svg).toHaveAttribute('width', '24');
+    expect(svg).toHaveAttribute('height', '24');
+  });
+});
+
+describe('Island', () => {
+  it('renders a plain div contributing no landmark of its own', () => {
+    const { container } = render(<Island>Body</Island>);
+    expect(container.firstElementChild?.tagName).toBe('DIV');
+  });
+
+  it('renders the semantic element asked for by `as`', () => {
+    render(<Island as="nav" aria-label="Sidebar" />);
+    expect(
+      screen.getByRole('navigation', { name: 'Sidebar' })
+    ).toBeInTheDocument();
+  });
+
+  it('publishes its grade for the CSS cascade to read', () => {
+    const { container } = render(<Island grade="elevated">Body</Island>);
+    expect(container.firstElementChild).toHaveAttribute(
+      'data-stella-grade',
+      'elevated'
+    );
+  });
+
+  it('marks itself nested only when nesting actually deepens the surface', () => {
+    const { container, rerender } = render(
+      <Island grade="elevated" nested>
+        Body
+      </Island>
+    );
+    expect(container.firstElementChild).toHaveAttribute('data-stella-nested');
+
+    rerender(
+      <Island grade="global" nested>
+        Body
+      </Island>
+    );
+    expect(container.firstElementChild).not.toHaveAttribute(
+      'data-stella-nested'
+    );
+  });
+});
+
+describe('ScrollArea', () => {
+  it('renders the semantic element asked for by `as`', () => {
+    render(<ScrollArea as="nav" aria-label="Categories" />);
+    expect(
+      screen.getByRole('navigation', { name: 'Categories' })
+    ).toBeInTheDocument();
+  });
+
+  it('identifies itself to the cascade without inventing semantics', () => {
+    const { container } = render(<ScrollArea>Body</ScrollArea>);
+    const root = container.firstElementChild!;
+    expect(root).toHaveAttribute('data-stella-component', 'scroll-area');
+    expect(root.tagName).toBe('DIV');
   });
 });

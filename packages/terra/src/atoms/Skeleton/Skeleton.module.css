@@ -1,0 +1,34 @@
+.skeleton {
+	display: block;
+
+	animation: stella-skeleton-pulse 1.6s var(--stella-easing-in-out) infinite;
+	background-color: var(--stella-g-surface-0);
+}
+
+.text {
+	width: 100%;
+	height: 1em;
+	border-radius: calc(var(--stella-radius-panel) / 2);
+}
+
+.circular {
+	width: var(--stella-space-10);
+	height: var(--stella-space-10);
+	border-radius: 50%;
+}
+
+.rectangular {
+	width: 100%;
+	height: calc(var(--stella-space-10) * 2);
+	border-radius: var(--stella-radius-panel);
+}
+
+@keyframes stella-skeleton-pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+}

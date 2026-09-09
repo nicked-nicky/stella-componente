@@ -1,0 +1,23 @@
+.group {
+	composes: group from "../../styles/shared/controlGroup.module.css";
+}
+
+.legend {
+	composes: legend from "../../styles/shared/controlGroup.module.css";
+}
+
+.items {
+	composes: items from "../../styles/shared/controlGroup.module.css";
+}
+
+.vertical {
+	composes: vertical from "../../styles/shared/controlGroup.module.css";
+}
+
+.horizontal {
+	composes: horizontal from "../../styles/shared/controlGroup.module.css";
+}
+
+.disabled {
+	composes: disabled from "../../styles/shared/controlGroup.module.css";
+}

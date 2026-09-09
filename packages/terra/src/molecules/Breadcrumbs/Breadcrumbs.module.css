@@ -1,0 +1,74 @@
+.breadcrumbs {
+	animation: var(--stella-appear-animation);
+
+	font-family: var(--stella-font-ui);
+	font-size: var(--stella-text-caption);
+}
+
+.list {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--stella-space-1);
+
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.item {
+	display: inline-flex;
+	align-items: center;
+	min-width: 0;
+}
+
+.link {
+	padding: var(--stella-space-1) var(--stella-space-2);
+	color: var(--stella-text-1);
+	text-decoration: none;
+	border-radius: var(--stella-radius-panel);
+
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+
+	transition:
+		background-color var(--stella-motion-fast) var(--stella-easing-out),
+		color var(--stella-motion-fast) var(--stella-easing-out);
+}
+
+.link:hover {
+	color: var(--stella-text-0);
+	background-color: var(--stella-g-surface-1);
+	text-decoration: underline;
+}
+
+.link:active {
+	background-color: var(--stella-g-surface-2);
+}
+
+.text {
+	padding: var(--stella-space-1) var(--stella-space-2);
+	color: var(--stella-text-1);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.current {
+	color: var(--stella-text-0);
+	font-weight: var(--stella-text-body-strong-weight);
+}
+
+.separator {
+	display: inline-flex;
+	align-items: center;
+	color: var(--stella-text-2);
+	user-select: none;
+}
+
+.separatorIcon {
+	display: inline-flex;
+	width: var(--stella-icon-size-sm);
+	height: var(--stella-icon-size-sm);
+}

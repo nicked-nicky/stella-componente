@@ -1,0 +1,18 @@
+.link {
+	composes: focusFill from "../../styles/shared/focusFill.module.css";
+
+	color: var(--stella-text-0);
+	text-decoration: underline;
+	text-decoration-color: var(--stella-text-2);
+	text-underline-offset: 0.15em;
+	border-radius: var(--stella-radius-panel);
+
+	transition:
+		text-decoration-color var(--stella-motion-fast) var(--stella-easing-out),
+		background-color var(--stella-motion-fast) var(--stella-easing-out),
+		color var(--stella-motion-fast) var(--stella-easing-out);
+}
+
+.link:hover {
+	text-decoration-color: currentColor;
+}

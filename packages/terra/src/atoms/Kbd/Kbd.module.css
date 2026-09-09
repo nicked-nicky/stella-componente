@@ -1,0 +1,18 @@
+.kbd {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 1.6em;
+	padding: 0.1em 0.5em;
+
+	font-family: var(--stella-font-mono);
+	font-size: 0.85em;
+	line-height: 1.4;
+	color: var(--stella-text-1);
+
+	border: var(--stella-border-width) solid transparent;
+	border-bottom-width: calc(var(--stella-border-width) + 1px);
+	border-radius: calc(var(--stella-radius-panel) / 2);
+	background-color: var(--stella-g-surface-0);
+	border-color: var(--stella-g-border-0);
+}
