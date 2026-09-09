@@ -14,4 +14,12 @@ pnpm-lock.yaml
 # The component showcase lives in its own repository and is gitignored
 # here. Without this line a local `pnpm format` would reach into a
 # checkout that isn't part of this project and rewrite it.
-terra-test/
+# terra-test/
+
+# Components on pause. They live on disk but are deliberately outside the
+# repo, the build and the published package until they are picked back up.
+packages/terra/src/molecules/CodeBlock/
+packages/terra/src/molecules/Tabs/
+packages/terra/src/organisms/Accordion/
+packages/terra/src/organisms/Drawer/
+packages/terra/src/organisms/Table/

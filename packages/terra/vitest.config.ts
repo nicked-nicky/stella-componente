@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 // Logic/a11y/keyboard-behavior tests only — jsdom doesn't evaluate real
@@ -14,5 +14,13 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
+    exclude: [
+      ...configDefaults.exclude,
+      'src/molecules/CodeBlock/**',
+      'src/molecules/Tabs/**',
+      'src/organisms/Accordion/**',
+      'src/organisms/Drawer/**',
+      'src/organisms/Table/**',
+    ],
   },
 });

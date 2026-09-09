@@ -15,6 +15,7 @@
  */
 
 import { readdir, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -46,6 +47,7 @@ async function copyCss(dir) {
   for (const entry of entries) {
     const from = join(dir, entry.name);
     if (entry.isDirectory()) {
+      if (existsSync(join(from, '.on-pause'))) continue;
       await copyCss(from);
     } else if (entry.name.endsWith('.css')) {
       const rel = from.slice(srcDir.length + 1);

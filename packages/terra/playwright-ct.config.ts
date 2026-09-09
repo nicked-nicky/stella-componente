@@ -7,6 +7,13 @@ import { defineConfig, devices } from '@playwright/experimental-ct-react';
 export default defineConfig({
   testDir: './src',
   testMatch: '**/*.ct.tsx',
+  testIgnore: [
+    '**/molecules/CodeBlock/**',
+    '**/molecules/Tabs/**',
+    '**/organisms/Accordion/**',
+    '**/organisms/Drawer/**',
+    '**/organisms/Table/**',
+  ],
   snapshotDir: './__snapshots__',
   timeout: 10_000,
   fullyParallel: true,

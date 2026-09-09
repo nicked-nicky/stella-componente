@@ -21,6 +21,11 @@
 		"src/**/*.test.ts",
 		"src/**/*.test.tsx",
 		"src/**/*.ct.tsx",
-		"src/**/*.story.tsx"
+		"src/**/*.story.tsx",
+		"src/molecules/CodeBlock",
+		"src/molecules/Tabs",
+		"src/organisms/Accordion",
+		"src/organisms/Drawer",
+		"src/organisms/Table"
 	]
 }

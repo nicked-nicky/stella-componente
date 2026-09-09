@@ -18,3 +18,11 @@ terra-test/
 
 # npm pack output, when run without --dry-run.
 *.tgz
+
+# Components on pause. They live on disk but are deliberately outside the
+# repo, the build and the published package until they are picked back up.
+packages/terra/src/molecules/CodeBlock/
+packages/terra/src/molecules/Tabs/
+packages/terra/src/organisms/Accordion/
+packages/terra/src/organisms/Drawer/
+packages/terra/src/organisms/Table/

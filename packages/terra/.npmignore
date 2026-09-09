@@ -1,0 +1,8 @@
+# Components on pause. Nothing of theirs is compiled or copied into
+# dist/ any more, so this is a second line of defence rather than the
+# primary one — the "files" allowlist in package.json is that.
+dist/molecules/CodeBlock/
+dist/molecules/Tabs/
+dist/organisms/Accordion/
+dist/organisms/Drawer/
+dist/organisms/Table/

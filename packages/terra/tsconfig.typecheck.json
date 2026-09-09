@@ -18,5 +18,12 @@
 		"vitest.config.ts",
 		"vitest.setup.ts",
 		"playwright-ct.config.ts"
+	],
+	"exclude": [
+		"src/molecules/CodeBlock",
+		"src/molecules/Tabs",
+		"src/organisms/Accordion",
+		"src/organisms/Drawer",
+		"src/organisms/Table"
 	]
 }
