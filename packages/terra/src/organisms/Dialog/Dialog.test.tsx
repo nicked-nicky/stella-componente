@@ -5,18 +5,10 @@ import userEvent from '@testing-library/user-event';
 import { OverlayProvider } from '../../providers/OverlayProvider';
 import { Dialog } from './Dialog';
 
-// A modal that leaks focus is a modal that's broken for keyboard and
-// screen-reader users — the trap, the initial focus move, and the
-// focus-restore-on-close are the three things that make it a dialog
-// rather than a floating div. All three are hand-rolled here (no
-// third-party focus-trap dependency, per Terra's bundle-size bar), so
-// they're worth asserting directly.
-
 function renderDialog(ui: ReactNode) {
   return render(<OverlayProvider>{ui}</OverlayProvider>);
 }
 
-/** Dialog with a trigger, so focus-restore has somewhere to restore to. */
 function DialogHarness({
   onClose,
   closeOnBackdrop,
@@ -49,19 +41,6 @@ function DialogHarness({
   );
 }
 
-/**
- * Opens the dialog and waits for its own focus move to land.
- *
- * Dialog focuses the first focusable in the panel on open, inside a
- * `requestAnimationFrame`. A test that sets focus itself before that
- * frame runs will have it silently taken back a tick later — the
- * assertion then reports wherever the *component* put focus, which is
- * both confusing and timing-dependent. Two of these tests passed
- * locally and failed in CI for exactly that reason.
- *
- * Returns the close button, which is the first focusable in the panel
- * and therefore where opening leaves focus.
- */
 async function openDialog(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole('button', { name: 'Open dialog' }));
   await screen.findByRole('dialog');
@@ -89,8 +68,6 @@ describe('Dialog — ARIA semantics', () => {
         </Dialog.Header>
       </Dialog>
     );
-    // Resolving by accessible name proves the aria-labelledby wiring
-    // actually points at the rendered title node.
     expect(
       await screen.findByRole('dialog', { name: 'Preferences' })
     ).toBeInTheDocument();
@@ -114,9 +91,6 @@ describe('Dialog — ARIA semantics', () => {
   });
 
   it('omits aria-labelledby entirely when there is no title, rather than pointing at a missing id', async () => {
-    // A dangling aria-labelledby is worse than none — screen readers
-    // announce an unlabelled dialog either way, but a broken reference
-    // hides the problem from auditing tools.
     renderDialog(
       <Dialog open>
         <Dialog.Body>Just a body</Dialog.Body>
@@ -190,8 +164,6 @@ describe('Dialog — focus management', () => {
     last.focus();
     await user.tab();
 
-    // Wrapped back to the first focusable in the panel (the close button)
-    // rather than escaping to the trigger behind the backdrop.
     expect(closeButton).toHaveFocus();
   });
 
@@ -251,8 +223,6 @@ describe('Dialog — dismissal', () => {
     await user.click(screen.getByRole('button', { name: 'Open dialog' }));
     const dialog = await screen.findByRole('dialog');
 
-    // The backdrop is the panel's parent; clicking the panel itself must
-    // not close, so the two are asserted as a pair.
     await user.click(dialog.parentElement!);
     expect(onClose).toHaveBeenCalledTimes(1);
   });

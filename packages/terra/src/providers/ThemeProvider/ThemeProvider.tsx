@@ -16,74 +16,25 @@ import type {
   MotionStyle,
 } from '../../theme/ThemeManager';
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
 interface ThemeContextValue {
-  /** Current theme config — re-renders your components on change. */
   config: ThemeConfig;
   setColorScheme: (colorScheme: ColorScheme) => void;
-  /** Rounding preset — scales every radius token together. */
   setRadius: (radius: RadiusStyle) => void;
-  /** Density preset — scales every spacing token together. */
   setDensity: (density: Density) => void;
-  /** Border thickness preset — sets --stella-border-width directly. */
   setBorderWidth: (borderWidth: BorderWidthStyle) => void;
-  /** Motion preset — 'system' defers to prefers-reduced-motion, 'reduced'/'off' override it explicitly. */
   setMotion: (motion: MotionStyle) => void;
-  /** Snapshot for your own save routine — see ThemeProvider's docstring. */
   getConfig: () => ThemeConfig;
-  /** Apply a config loaded from your own save routine. */
   loadConfig: (config: Partial<ThemeConfig>) => void;
 }
 
 interface ThemeProviderProps {
   children: React.ReactNode;
-  /**
-   * Initial theme — pass in whatever you loaded from your own saved
-   * config before first render. Omit to start from Terra's defaults
-   * (system color scheme, default rounding/density).
-   */
   defaultConfig?: Partial<ThemeConfig>;
-  /**
-   * Fires on every theme change with the new config. This is where you
-   * wire your own save call (Tauri fs write, Electron IPC, etc.) —
-   * Stella-Componente never persists anything itself.
-   */
   onChange?: (config: ThemeConfig) => void;
 }
 
-// ============================================================================
-// CONTEXT
-// ============================================================================
-
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-// ============================================================================
-// PROVIDER
-// ============================================================================
-
-/**
- * ThemeProvider - React binding for `ThemeManager`.
- *
- * Wrap your app root once. Everything downstream reads color scheme /
- * rounding / density / border thickness purely through CSS custom
- * properties, so most
- * components never need `useTheme()` at all — it's for whatever
- * actually lets the user *change* the theme (a settings panel) and for
- * your own save/load wiring.
- *
- * @example
- * ```tsx
- * <ThemeProvider
- *   defaultConfig={loadedFromDisk}
- *   onChange={(config) => tauriFs.writeTextFile('theme.json', JSON.stringify(config))}
- * >
- *   <App />
- * </ThemeProvider>
- * ```
- */
 export function ThemeProvider({
   children,
   defaultConfig,
@@ -101,7 +52,6 @@ export function ThemeProvider({
     managerRef.current!.getConfig()
   );
 
-  // Keep the latest onChange without needing to resubscribe every render.
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
@@ -134,7 +84,6 @@ export function ThemeProvider({
   );
 }
 
-/** Access and control the current theme. Must be used within a `ThemeProvider`. */
 export function useTheme(): ThemeContextValue {
   const ctx = useContext(ThemeContext);
   if (!ctx) {

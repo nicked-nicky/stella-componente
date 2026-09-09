@@ -3,10 +3,6 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Checkbox } from './Checkbox';
 
-// Example/template test — see WIKI.md's Testing section for what belongs
-// here (logic, ARIA, controlled/uncontrolled) vs in a Playwright
-// component test (anything CSS-state-dependent).
-
 describe('Checkbox', () => {
   it('associates the label with the input via htmlFor/id', () => {
     render(<Checkbox label="Accept terms" />);

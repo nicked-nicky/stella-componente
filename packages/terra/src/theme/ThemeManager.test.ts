@@ -1,13 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ThemeManager, DEFAULT_THEME_CONFIG } from './ThemeManager';
 
-// ThemeManager is the whole theming contract in one place, and it's pure
-// DOM-property writing with no React import — so it tests cheaply and
-// covers a lot. The thing worth protecting is that the four axes are
-// genuinely independent: they're presented to consumers as four separate
-// settings, and the failure mode if that breaks (setting radius quietly
-// resetting density) is silent and confusing.
-
 function freshRoot(): HTMLElement {
   const el = document.createElement('div');
   document.body.appendChild(el);
@@ -49,9 +42,6 @@ describe('ThemeManager — colour scheme', () => {
   });
 
   it('removes data-theme for `system`, handing the decision to CSS', () => {
-    // "system" is the absence of an override, not a third value — the
-    // stylesheet's color-scheme + light-dark() resolves it from the OS.
-    // Writing data-theme="system" here would match no CSS rule at all.
     const root = freshRoot();
     const manager = new ThemeManager(root, { colorScheme: 'dark' });
     expect(root.getAttribute('data-theme')).toBe('dark');
@@ -63,8 +53,6 @@ describe('ThemeManager — colour scheme', () => {
 
 describe('ThemeManager — motion', () => {
   it('removes data-stella-motion for `system`, handing the decision to CSS', () => {
-    // Same "system" contract as colour scheme: absence of an override,
-    // not a third value — prefers-reduced-motion alone decides.
     const root = freshRoot();
     const manager = new ThemeManager(root, { motion: 'reduced' });
     expect(root.getAttribute('data-stella-motion')).toBe('reduced');
@@ -85,9 +73,6 @@ describe('ThemeManager — motion', () => {
 
 describe('ThemeManager — style scales', () => {
   it('writes the radius multiplier rather than a resolved pixel value', () => {
-    // Components read --stella-radius-panel, which is defined in terms of
-    // this multiplier — so one property write re-rounds the whole kit
-    // with zero React re-renders (project principle 5).
     const root = freshRoot();
     const manager = new ThemeManager(root);
     manager.setRadius('sharp');
@@ -106,8 +91,6 @@ describe('ThemeManager — style scales', () => {
   });
 
   it('writes border width as a literal pixel value, not a multiplier', () => {
-    // Hairlines don't subdivide cleanly, so this axis skips the scale
-    // indirection the other two use — see BorderWidthStyle's docblock.
     const root = freshRoot();
     const manager = new ThemeManager(root);
     manager.setBorderWidth('thin');
@@ -140,7 +123,6 @@ describe('ThemeManager — axis independence', () => {
     expect(config.density).toBe('compact');
     expect(config.borderWidth).toBe('thick');
 
-    // ...and the DOM agrees, not just the in-memory config.
     expect(root.getAttribute('data-theme')).toBe('dark');
     expect(root.style.getPropertyValue('--stella-space-scale')).toBe('0.85');
     expect(root.style.getPropertyValue('--stella-border-width')).toBe('3px');
@@ -163,9 +145,6 @@ describe('ThemeManager — axis independence', () => {
 
 describe('ThemeManager — getConfig / loadConfig', () => {
   it('getConfig returns a JSON-serialisable copy, not the live object', () => {
-    // The documented save contract is JSON.stringify(getConfig()) — if
-    // this handed back the internal object, a caller mutating it would
-    // silently desync the manager from the DOM.
     const root = freshRoot();
     const manager = new ThemeManager(root);
     const snapshot = manager.getConfig();
@@ -185,8 +164,6 @@ describe('ThemeManager — getConfig / loadConfig', () => {
   });
 
   it('loadConfig keeps current values for keys the saved config omits', () => {
-    // A config saved before a field existed shouldn't reset that field —
-    // this is the stated forward-compatibility guarantee.
     const root = freshRoot();
     const manager = new ThemeManager(root, { radius: 'round' });
     manager.loadConfig({ colorScheme: 'dark' });

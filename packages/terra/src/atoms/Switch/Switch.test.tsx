@@ -3,11 +3,6 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Switch } from './Switch';
 
-// Switch is the one atom with hand-rolled keyboard/ARIA wiring (no
-// native <input type="switch">), which makes it the highest-regression-
-// risk atom in the kit — worth a real test rather than trusting the
-// button's native Space/Enter activation blindly.
-
 describe('Switch', () => {
   it('exposes role="switch" and aria-checked, not a native checkbox role', () => {
     render(<Switch defaultChecked aria-label="Notifications" />);
@@ -49,8 +44,6 @@ describe('Switch', () => {
 
     await user.click(el);
     expect(onCheckedChange).toHaveBeenCalledWith(true);
-    // Parent didn't re-render with checked=true, so the switch stays off —
-    // this is what "controlled" means, and it's easy to accidentally break.
     expect(el).toHaveAttribute('aria-checked', 'false');
   });
 

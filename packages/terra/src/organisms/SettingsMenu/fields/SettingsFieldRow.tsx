@@ -11,11 +11,6 @@ interface SettingsFieldRowProps {
   onChange: (value: SettingsFieldValue) => void;
 }
 
-/**
- * Dispatches on `field.type` to the matching renderer — one file per
- * field type instead of one growing if-chain, so a new field type
- * means adding a file here, not editing this one.
- */
 export function SettingsFieldRow({
   categoryId,
   field,

@@ -3,20 +3,9 @@ import { vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { NotificationProvider, useNotifications } from './NotificationProvider';
 
-// Almost all of this provider's behaviour is timer-driven, which makes
-// it both the easiest thing in the kit to get subtly wrong and the
-// easiest to test deterministically with fake timers. The cases that
-// matter are the ones a manual click-through would never catch:
-// pause-on-hover actually cancelling the countdown, dismissing one toast
-// not disturbing its neighbours' timers, and duration: 0 meaning
-// "sticky" rather than "dismiss immediately".
-
 const DEFAULT_DURATION = 5000;
-/** Matches EXIT_DURATION_MS in NotificationProvider. */
 const EXIT_DURATION = 150;
 
-/** Exposes the imperative API to the test body. Assigned during the
- * provider's first render, before any test body touches it. */
 let notify!: ReturnType<typeof useNotifications>;
 
 function Consumer() {
@@ -32,32 +21,12 @@ function renderProvider() {
   );
 }
 
-/** Advance past a toast's auto-dismiss *and* its exit animation. */
 async function advance(ms: number) {
   await act(async () => {
     vi.advanceTimersByTime(ms);
   });
 }
 
-/**
- * Interactions here use `fireEvent`, not `user-event`, and that's a
- * deliberate exception to the pattern the rest of the suite follows.
- *
- * user-event is the better default — it models a real user, firing the
- * full event sequence a browser would. But it is asynchronous by design,
- * and under fake timers its internal waits and vitest's frozen clock
- * deadlock each other: the interaction waits for time that nothing is
- * advancing. `advanceTimers` plus `delay: null` is the documented
- * escape hatch and still wasn't enough here.
- *
- * Every test in this file is *about* timer behaviour, so fake timers are
- * non-negotiable and the interaction is the part that gives. fireEvent
- * is synchronous and has no timer interaction at all.
- *
- * mouseOver/mouseOut rather than mouseEnter/mouseLeave because React
- * synthesises onMouseEnter/onMouseLeave from the delegated over/out
- * events — dispatching a native `mouseenter` reaches no React handler.
- */
 function hover(element: HTMLElement) {
   fireEvent.mouseOver(element);
 }
@@ -135,8 +104,6 @@ describe('NotificationProvider', () => {
       expect(region).not.toBeNull();
       expect(region).toHaveAttribute('aria-live', 'polite');
 
-      // Persistent, not created per-toast — a live region added at the
-      // same time as its content is frequently not announced at all.
       await act(async () => {
         notify.info('Hello');
       });
@@ -255,7 +222,6 @@ describe('NotificationProvider', () => {
         notify.dismiss(id);
       });
 
-      // Still mounted mid-animation.
       expect(screen.getByText('Fading')).toBeInTheDocument();
 
       await advance(EXIT_DURATION);
@@ -298,10 +264,6 @@ describe('NotificationProvider', () => {
   });
 
   describe('portal lifecycle', () => {
-    // No waitFor here on purpose: RTL's render flushes effects inside
-    // act, so the portal root exists by the time render returns. waitFor
-    // would poll on a clock that fake timers have frozen, and simply
-    // hang until the test times out.
     it('mounts its own root, separate from the overlay portal', () => {
       renderProvider();
       expect(

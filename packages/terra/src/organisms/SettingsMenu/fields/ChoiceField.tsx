@@ -12,12 +12,6 @@ interface ChoiceFieldProps {
   onChange: (value: SettingsFieldValue) => void;
 }
 
-/**
- * Renders a `type: 'choice'` field as either a segmented `ButtonIsland`
- * (`control: 'segmented'` — mutually-exclusive style picks, the GTK
- * view-switcher look, selection read via `Button`'s `active` state) or
- * a vertical `Radio` list (default).
- */
 export function ChoiceField({
   categoryId,
   field,

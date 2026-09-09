@@ -10,11 +10,6 @@ interface BooleanFieldProps {
   onChange: (value: SettingsFieldValue) => void;
 }
 
-/**
- * Renders a `type: 'boolean'` field as a `Switch`. The whole label
- * block (title + description) is clickable — libadwaita's
- * ActionRow/SwitchRow convention of a large click target.
- */
 export function BooleanField({
   field,
   fieldId,

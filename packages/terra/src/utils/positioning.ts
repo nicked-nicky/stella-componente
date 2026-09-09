@@ -1,25 +1,6 @@
-/**
- * Terra's own minimal anchored-positioning engine — no floating-ui or
- * popper dependency (see the project's bundle-size principle: every
- * Terra dependency has to be justified, default answer is no). The
- * actual surface area Tooltip/Popover/Menu need is small: 4 sides × 3
- * alignments, one flip-to-the-opposite-side pass, and a cross-axis
- * shift to stay clear of the viewport edge. That's it — no
- * `autoPlacement`, no multi-strategy fallback chain, no arrow
- * middleware. This file is pure geometry (no DOM reads, no React) so
- * it's trivially testable; `hooks/useAnchorPosition` is the stateful
- * wrapper that feeds it real rects.
- */
-
-// ============================================================================
-// TYPES
-// ============================================================================
-
 export type PlacementSide = 'top' | 'bottom' | 'left' | 'right';
 export type PlacementAlign = 'start' | 'center' | 'end';
 
-/** `side` or `side-align` (align omitted means `center`) — same shape
- * as Radix/Floating UI's placement strings, so it reads familiarly. */
 export type Placement =
   | 'top'
   | 'top-start'
@@ -41,10 +22,6 @@ interface Rect {
   height: number;
 }
 
-/** Same contract as `Element.getBoundingClientRect()` — lets a cursor
- * point (context menu) or any other non-element target act as an
- * anchor, as long as it can report a viewport rect. Real elements
- * satisfy this already. */
 export interface VirtualAnchor {
   getBoundingClientRect(): Rect;
 }
@@ -56,9 +33,7 @@ interface ComputeAnchoredPositionInput {
   panelWidth: number;
   panelHeight: number;
   placement: Placement;
-  /** Gap between anchor and panel, in px. */
   offset: number;
-  /** Minimum gap kept from the viewport edge when shifting. */
   padding: number;
   viewportWidth: number;
   viewportHeight: number;
@@ -67,14 +42,8 @@ interface ComputeAnchoredPositionInput {
 interface ComputeAnchoredPositionResult {
   top: number;
   left: number;
-  /** Resolved side/align *after* flip — use to orient an arrow or pick
-   * which edge an enter animation should originate from. */
   placement: Placement;
 }
-
-// ============================================================================
-// INTERNAL
-// ============================================================================
 
 const OPPOSITE: Record<PlacementSide, PlacementSide> = {
   top: 'bottom',
@@ -98,7 +67,6 @@ function joinPlacement(side: PlacementSide, align: PlacementAlign): Placement {
   return (align === 'center' ? side : `${side}-${align}`) as Placement;
 }
 
-/** Coordinates for one specific side+align combination, ignoring collisions. */
 function place(
   side: PlacementSide,
   align: PlacementAlign,
@@ -154,26 +122,6 @@ function fitsOnSide(
   );
 }
 
-// ============================================================================
-// PUBLIC
-// ============================================================================
-
-/**
- * Resolves a floating panel's viewport position against an anchor
- * rect. `position: fixed` in viewport coordinates throughout — matches
- * `OverlayProvider`'s fixed, unscrolled portal root, so a panel's
- * `top`/`left` here can be applied directly with no scroll-offset math.
- *
- * Flip: if the preferred side doesn't fit and the opposite side does,
- * switches sides once. (Doesn't cascade through every remaining side —
- * with 4 sides that's rarely needed and adds real complexity for an
- * edge case.)
- *
- * Shift: after side resolution, slides along the cross-axis to stay
- * `padding` clear of the viewport edge without changing side — GTK
- * popovers stay pinned to their trigger's edge rather than jumping to
- * an entirely different placement.
- */
 export function computeAnchoredPosition({
   anchorRect,
   panelWidth,
@@ -234,20 +182,6 @@ export function computeAnchoredPosition({
   return { top, left, placement: joinPlacement(resolvedSide, align) };
 }
 
-/**
- * Builds a `VirtualAnchor` pinned to a single viewport point — the
- * bridge for cursor-positioned overlays (right-click context menus)
- * that have no real trigger element to measure.
- *
- * @example
- * ```tsx
- * function handleContextMenu(event: React.MouseEvent) {
- *   event.preventDefault();
- *   setAnchor(pointAnchor(event.clientX, event.clientY));
- *   setOpen(true);
- * }
- * ```
- */
 export function pointAnchor(x: number, y: number): VirtualAnchor {
   return {
     getBoundingClientRect: () => ({ top: y, left: x, width: 0, height: 0 }),

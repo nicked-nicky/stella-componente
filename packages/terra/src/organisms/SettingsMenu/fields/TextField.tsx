@@ -9,7 +9,6 @@ interface TextFieldProps {
   onChange: (value: SettingsFieldValue) => void;
 }
 
-/** Renders a `type: 'text'` field as a bare `Input`. */
 export function TextField({ field, fieldId, value, onChange }: TextFieldProps) {
   return (
     <div>
