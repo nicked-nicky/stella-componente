@@ -41,7 +41,11 @@ export const Progress = forwardRef<HTMLDivElement, ProgressProps>(
       >
         <div
           className={cx(styles.fill, indeterminate && styles.indeterminate)}
-          style={indeterminate ? undefined : { width: `${percent}%` }}
+          style={
+            indeterminate
+              ? undefined
+              : ({ '--stella-progress': `${percent}%` } as React.CSSProperties)
+          }
         />
       </div>
     );

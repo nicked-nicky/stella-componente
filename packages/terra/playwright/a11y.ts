@@ -28,7 +28,7 @@ import type { Page } from '@playwright/test';
 /**
  * Waits for entrance animations to finish before anything measures colour.
  *
- * Terra fades components in on mount (`--stella-appear-animation`), and
+ * Overlays, alerts and empty states animate in on mount, and
  * axe computes contrast from *rendered* colour — so an element sampled
  * mid-fade reports its text blended toward the background and fails
  * `color-contrast` for a problem that doesn't exist a few hundred

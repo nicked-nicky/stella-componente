@@ -61,9 +61,22 @@ export function useAnchorPosition({
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
     });
-    setCoords({ top: result.top, left: result.left });
+    setCoords((prev) =>
+      prev && prev.top === result.top && prev.left === result.left
+        ? prev
+        : { top: result.top, left: result.left }
+    );
     setResolvedPlacement(result.placement);
   }, [anchor, placement, offset, padding]);
+
+  const frame = useRef<number | undefined>(undefined);
+  const scheduleRecompute = useCallback(() => {
+    if (frame.current !== undefined) return;
+    frame.current = requestAnimationFrame(() => {
+      frame.current = undefined;
+      recompute();
+    });
+  }, [recompute]);
 
   useLayoutEffect(() => {
     if (!open) {
@@ -75,20 +88,25 @@ export function useAnchorPosition({
 
   useEffect(() => {
     if (!open) return;
-    window.addEventListener('scroll', recompute, true);
-    window.addEventListener('resize', recompute);
+    const listenerOptions = { capture: true, passive: true };
+    window.addEventListener('scroll', scheduleRecompute, listenerOptions);
+    window.addEventListener('resize', scheduleRecompute, { passive: true });
     return () => {
-      window.removeEventListener('scroll', recompute, true);
-      window.removeEventListener('resize', recompute);
+      window.removeEventListener('scroll', scheduleRecompute, listenerOptions);
+      window.removeEventListener('resize', scheduleRecompute);
+      if (frame.current !== undefined) {
+        cancelAnimationFrame(frame.current);
+        frame.current = undefined;
+      }
     };
-  }, [open, recompute]);
+  }, [open, scheduleRecompute]);
 
   useEffect(() => {
     if (!open || !panel || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(recompute);
+    const observer = new ResizeObserver(scheduleRecompute);
     observer.observe(panel);
     return () => observer.disconnect();
-  }, [open, panel, recompute]);
+  }, [open, panel, scheduleRecompute]);
 
   const style: React.CSSProperties = coords
     ? { position: 'fixed', top: coords.top, left: coords.left }

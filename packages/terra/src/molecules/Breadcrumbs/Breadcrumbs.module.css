@@ -1,6 +1,4 @@
 .breadcrumbs {
-	animation: var(--stella-appear-animation);
-
 	font-family: var(--stella-font-ui);
 	font-size: var(--stella-text-caption);
 }

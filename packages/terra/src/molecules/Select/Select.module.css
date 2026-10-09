@@ -1,6 +1,4 @@
 .trigger {
-	animation: var(--stella-appear-animation);
-
 	position: relative;
 	display: inline-flex;
 	align-items: center;

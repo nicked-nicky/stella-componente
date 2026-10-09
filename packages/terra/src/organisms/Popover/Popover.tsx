@@ -27,7 +27,12 @@ export function Popover({
   className,
   children,
 }: PopoverProps) {
-  const { root, panelRef, style } = useDismissableOverlay({
+  const {
+    root,
+    panelRef,
+    style,
+    placement: resolvedPlacement,
+  } = useDismissableOverlay({
     open,
     onClose,
     anchor,
@@ -38,7 +43,7 @@ export function Popover({
   if (!open || !root) return null;
 
   return createPortal(
-    <div ref={panelRef} style={style}>
+    <div ref={panelRef} style={style} data-stella-placement={resolvedPlacement}>
       <Island
         shape="panel"
         grade="global"

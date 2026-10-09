@@ -1,6 +1,4 @@
 .divider {
-	animation: var(--stella-appear-animation);
-
 	flex-shrink: 0;
 	border: none;
 

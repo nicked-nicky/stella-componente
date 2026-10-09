@@ -417,14 +417,14 @@
 	--stella-easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 	--stella-easing-expo: cubic-bezier(0.16, 1, 0.3, 1);
 
-	--stella-appear-animation: stella-appear var(--stella-motion-slower)
-		var(--stella-easing-expo) backwards;
+	--stella-appear-animation: stella-appear var(--stella-motion-base)
+		var(--stella-easing-out) backwards;
 
 	--stella-backdrop-in-animation: stella-appear var(--stella-motion-fast)
 		var(--stella-easing-out) both;
 
-	--stella-overlay-pop-animation: stella-overlay-pop var(--stella-motion-fast)
-		var(--stella-easing-spring) both;
+	--stella-overlay-pop-animation: stella-overlay-pop var(--stella-motion-base)
+		var(--stella-easing-expo) both;
 }
 
 [data-stella-grade="global"] {
@@ -537,13 +537,69 @@
 @keyframes stella-overlay-pop {
 	from {
 		opacity: 0;
-		transform: scale(0.96);
+		transform: translateY(var(--stella-overlay-shift, 0px)) scale(0.97);
 	}
 
 	to {
 		opacity: 1;
 		transform: none;
 	}
+}
+
+[data-stella-placement^="top"] {
+	--stella-overlay-shift: 4px;
+}
+
+[data-stella-placement^="bottom"] {
+	--stella-overlay-shift: -4px;
+}
+
+[data-stella-placement="top"] {
+	--stella-overlay-origin: bottom center;
+}
+
+[data-stella-placement="top-start"] {
+	--stella-overlay-origin: bottom left;
+}
+
+[data-stella-placement="top-end"] {
+	--stella-overlay-origin: bottom right;
+}
+
+[data-stella-placement="bottom"] {
+	--stella-overlay-origin: top center;
+}
+
+[data-stella-placement="bottom-start"] {
+	--stella-overlay-origin: top left;
+}
+
+[data-stella-placement="bottom-end"] {
+	--stella-overlay-origin: top right;
+}
+
+[data-stella-placement="left"] {
+	--stella-overlay-origin: center right;
+}
+
+[data-stella-placement="left-start"] {
+	--stella-overlay-origin: top right;
+}
+
+[data-stella-placement="left-end"] {
+	--stella-overlay-origin: bottom right;
+}
+
+[data-stella-placement="right"] {
+	--stella-overlay-origin: center left;
+}
+
+[data-stella-placement="right-start"] {
+	--stella-overlay-origin: top left;
+}
+
+[data-stella-placement="right-end"] {
+	--stella-overlay-origin: bottom left;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,5 +1,6 @@
 import React, {
   createContext,
+  useCallback,
   useContext,
   useMemo,
   useRef,
@@ -83,14 +84,17 @@ function ListBase({
   const [internalValue, setInternalValue] = useState(defaultValue);
   const selectedValue = isControlled ? value : internalValue;
 
-  const select = (next: string) => {
-    if (!isControlled) setInternalValue(next);
-    onValueChange?.(next);
-  };
+  const select = useCallback(
+    (next: string) => {
+      if (!isControlled) setInternalValue(next);
+      onValueChange?.(next);
+    },
+    [isControlled, onValueChange]
+  );
 
   const contextValue = useMemo<ListContextValue>(
     () => ({ selectedValue, select }),
-    [selectedValue, isControlled, onValueChange]
+    [selectedValue, select]
   );
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {

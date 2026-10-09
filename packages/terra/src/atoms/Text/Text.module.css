@@ -1,6 +1,4 @@
 .text {
-	animation: var(--stella-appear-animation);
-
 	font-family: var(--stella-font-ui);
 	margin: 0;
 }

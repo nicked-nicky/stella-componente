@@ -2,6 +2,24 @@
 
 All notable changes to Stella-Componente are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). `@stella-componente/terra` follows [Semantic Versioning](https://semver.org/) from its first published release; pre-1.0, a minor bump may still carry breaking changes (the standard semver-0.x reading). `@stella-componente/vidrio` remains unpublished and workspace-only.
 
+## [Unreleased]
+
+### Changed
+
+- **Components no longer fade in on mount.** `Button`, `Island`, `Text`, `Icon`, `Badge`, `Divider`, `Avatar`, `Input`, `Textarea`, `Switch`, `Slider`, `Spinner`, `Select`, `Breadcrumbs`, `Checkbox`/`Radio` and the `RadioGroup`/`CheckboxGroup` wrappers each ran a 400 ms opacity animation every time they mounted. Every tab switch, route change or re-keyed list re-faded the whole screen, which read as lag and let the content flash in. Each element also ran its own animation, which was costly on WebKitGTK (Tauri on Linux). Entry motion now only plays where something actually arrives: overlays, `Dialog`, `Notification`, `Alert` and `EmptyState`. `--stella-appear-animation` is shortened to 200 ms ease-out.
+- **Overlay entry motion no longer overshoots.** `Menu` and `Popover` pop in with expo-out instead of the spring curve, over 200 ms instead of 150 ms. They scale from the edge facing their anchor (`data-stella-placement` on the positioned wrapper drives `--stella-overlay-origin`), and that edge follows a flipped placement. `Dialog`'s panel entry also moves from spring to expo-out.
+- **`Spinner` turns at 0.8 s per revolution** instead of riding `--stella-motion-slow` (300 ms), which spun frantically.
+- **`List` is now a boxed list.** It draws its own grade-indirected border, radius and surface, with seams between rows, so it no longer bleeds into whatever sits behind it. Hover and press read `--stella-g-surface-*` like every other grade-aware component, instead of the raw numbered scale. The selected row uses `--stella-g-surface-2`; `--stella-selected` was indistinguishable from the new list surface in light mode. **Visual change** for any existing `List`.
+
+### Performance
+
+- **`Progress` animates on the compositor.** The determinate fill moves with `transform` (driven by a `--stella-progress` custom property) instead of transitioning `width`, and the indeterminate bar slides with `translateX` instead of animating `left`. Both previously forced layout on every frame.
+- **Anchored overlays reposition once per frame.** `useAnchorPosition` ran two `getBoundingClientRect` reads and a React state update on every scroll event from any scroller on the page. It now coalesces scroll, resize and `ResizeObserver` callbacks into a single `requestAnimationFrame`, listens passively, and skips the state update when the coordinates haven't changed.
+
+### Fixed
+
+- **`List`'s keyboard focus fill disappeared under the pointer.** The hover, press and selected rules out-specified `:focus-visible`, so a focused row that was also hovered lost its focus indicator. All three now yield with `:not(:focus-visible)`.
+
 ## [0.1.0-alpha.2] — 2026-09-09
 
 ### Added

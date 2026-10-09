@@ -1,6 +1,4 @@
 .group {
-	animation: var(--stella-appear-animation);
-
 	display: flex;
 	flex-direction: column;
 	gap: var(--stella-space-3);

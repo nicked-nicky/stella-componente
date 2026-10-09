@@ -1,6 +1,4 @@
 .wrapper {
-	animation: var(--stella-appear-animation);
-
 	display: block;
 	position: relative;
 	width: 100%;

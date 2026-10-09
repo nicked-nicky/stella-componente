@@ -12,5 +12,6 @@
 	);
 	outline: none;
 
+	transform-origin: var(--stella-overlay-origin, center);
 	animation: var(--stella-overlay-pop-animation);
 }

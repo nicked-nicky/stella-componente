@@ -1,6 +1,4 @@
 .badge {
-	animation: var(--stella-appear-animation);
-
 	display: inline-flex;
 	align-items: center;
 	gap: var(--stella-space-1);

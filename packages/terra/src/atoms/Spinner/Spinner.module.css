@@ -4,9 +4,7 @@
 	border: 2px solid currentColor;
 	border-right-color: transparent;
 	border-radius: var(--stella-radius-panel);
-	animation:
-		stella-spin var(--stella-motion-slow) linear infinite,
-		var(--stella-appear-animation);
+	animation: stella-spin 0.8s linear infinite;
 }
 
 .size-xs {

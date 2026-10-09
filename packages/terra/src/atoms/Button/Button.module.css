@@ -7,8 +7,6 @@
 	gap: var(--stella-space-1);
 	position: relative;
 
-	animation: var(--stella-appear-animation);
-
 	font-family: var(--stella-font-ui);
 	font-size: var(--stella-text-body);
 	font-weight: 600;

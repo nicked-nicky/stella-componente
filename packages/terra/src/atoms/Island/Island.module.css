@@ -1,6 +1,4 @@
 .island {
-	animation: var(--stella-appear-animation);
-
 	box-sizing: border-box;
 	color: var(--stella-text-0);
 

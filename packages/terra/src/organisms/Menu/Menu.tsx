@@ -56,7 +56,14 @@ export function Menu({
     timer: undefined,
   });
 
-  const { root, panelRef, panel, style, requestClose } = useDismissableOverlay({
+  const {
+    root,
+    panelRef,
+    panel,
+    style,
+    placement: resolvedPlacement,
+    requestClose,
+  } = useDismissableOverlay({
     open,
     onClose,
     anchor,
@@ -117,7 +124,7 @@ export function Menu({
   if (!open || !root) return null;
 
   return createPortal(
-    <div ref={panelRef} style={style}>
+    <div ref={panelRef} style={style} data-stella-placement={resolvedPlacement}>
       <ButtonIsland
         orientation="vertical"
         grade={grade}
